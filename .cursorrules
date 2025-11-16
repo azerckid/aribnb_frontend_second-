@@ -62,6 +62,11 @@ version: 1
 - Avoid `any`; prefer explicit types and interfaces.
 - Co-locate types with modules or in a shared `types/` directory when reused.
 - Route file types import rule: In route files only, import route-generated types like this — `import type { Route } from "./+types/<route-file>";`. Do not import `Route` types inside `components/` (use local props/interfaces instead).
+- Types one-source rule: Keep a single source of truth for types.
+  - API contracts: generate/import from backend spec (e.g., OpenAPI) or a shared package; do not duplicate shapes locally.
+  - Route types: use framework-generated `./+types/<route-file>` only in route files.
+  - Component props: define local interfaces; do not pull in route types into `components/`.
+  - If a type is reused across modules, centralize it in `types/` and import from there (no copy-paste).
 
 ## Code Style & Structure
 - Follow early returns and shallow nesting.
