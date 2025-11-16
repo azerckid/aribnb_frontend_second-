@@ -1,12 +1,15 @@
-import { Box, Button, Container, HStack, Text } from "@chakra-ui/react";
+import { Box, Button, Container, HStack, IconButton, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
+import { FaMoon, FaSun } from "react-icons/fa";
 
 interface NavigationProps {
     onLoginClick?: () => void;
     onSignUpClick?: () => void;
+    appearance?: "light" | "dark";
+    onToggleAppearance?: () => void;
 }
 
-export function Navigation({ onLoginClick, onSignUpClick }: NavigationProps) {
+export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", onToggleAppearance }: NavigationProps) {
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
             <Container maxW="7xl" py={4}>
@@ -19,6 +22,15 @@ export function Navigation({ onLoginClick, onSignUpClick }: NavigationProps) {
                         </RouterLink>
                     </Button>
                     <HStack gap={2}>
+                        {onToggleAppearance && (
+                            <IconButton
+                                aria-label="Toggle color mode"
+                                variant="ghost"
+                                onClick={onToggleAppearance}
+                            >
+                                {appearance === "dark" ? <FaSun /> : <FaMoon />}
+                            </IconButton>
+                        )}
                         <Button variant="ghost" onClick={onLoginClick}>Log in</Button>
                         <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
                     </HStack>

@@ -1,24 +1,39 @@
-import { Box, Container, Text } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import type React from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
   header?: React.ReactNode;
+  footer?: React.ReactNode;
+  fullBleed?: boolean;
+  contentMaxW?: string | number;
+  contentPx?: any;
 }
 
-export function AppLayout({ children, header }: AppLayoutProps) {
+export function AppLayout({
+  children,
+  header,
+  footer,
+  fullBleed = false,
+  contentMaxW = "1280px",
+  contentPx = { base: 4, md: 6 },
+}: AppLayoutProps) {
   return (
     <Box minH="100dvh" display="flex" flexDir="column">
-      {header}
-      <Box as="main" flex="1">
-        {children}
+      <Box as="header">
+        {header}
       </Box>
-      <Box as="footer" borderTopWidth="1px" bg="bg" py={6}>
-        <Container maxW="7xl">
-          <Text color="fg.muted" fontSize="sm">
-            © {new Date().getFullYear()} Guest House Booking System. All rights reserved.
-          </Text>
-        </Container>
+      <Box as="main" flex="1">
+        {fullBleed ? (
+          children
+        ) : (
+          <Box maxW={contentMaxW} mx="auto" px={contentPx}>
+            {children}
+          </Box>
+        )}
+      </Box>
+      <Box as="footer">
+        {footer}
       </Box>
     </Box>
   );

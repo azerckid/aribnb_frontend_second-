@@ -6,13 +6,14 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { useMemo, useState } from "react";
+import "./app.css";
 
 import type { Route } from "./+types/root";
-import "./app.css";
+
 import { ChakraProvider, Theme } from "@chakra-ui/react";
 import { theme } from "./theme";
 import { NotFound } from "./components/common/NotFound";
-
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -38,9 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ChakraProvider value={theme}>
-          <Theme appearance="light">
-            {children}
-          </Theme>
+          {children}
         </ChakraProvider>
         <ScrollRestoration />
         <Scripts />
@@ -50,7 +49,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  type Appearance = "light" | "dark";
+  const [appearance, setAppearance] = useState<Appearance>("light");
+  const ctx = useMemo(() => ({
+    appearance,
+    toggleAppearance: () => setAppearance((prev) => (prev === "dark" ? "light" : "dark")),
+  }), [appearance]);
+  return (
+    <Theme appearance={appearance}>
+      <Outlet context={ctx} />
+    </Theme>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

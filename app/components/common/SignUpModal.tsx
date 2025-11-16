@@ -84,13 +84,16 @@ export function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
                                 <FaLock size={18} />
                             </Box>
                         </Box>
-                        <Button mt={1} colorPalette="red" w="100%" onClick={onClose}>
-                            Sign up
-                        </Button>
-                        <SocialLogin />
                     </VStack>
                 </DialogBody>
-                <DialogFooter />
+                <DialogFooter>
+                    <Button colorPalette="red" w="100%" onClick={onClose}>
+                        Log in
+                    </Button>
+                </DialogFooter>
+                <Box px={6}>
+                    <SocialLogin />
+                </Box>
             </DialogContent>
         </DialogRoot>
     );

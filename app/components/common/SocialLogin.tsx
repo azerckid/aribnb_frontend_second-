@@ -4,7 +4,7 @@ import { FaComment, FaGithub } from "react-icons/fa";
 export function SocialLogin() {
     return (
         <Box mb={4}>
-            <HStack my={8} w="100%">
+            <HStack mt={2} mb={5} w="100%">
                 <Separator flex="1" />
                 <Text textTransform={"uppercase"} color="fg.muted" fontSize="xs" as="b">
                     Or
