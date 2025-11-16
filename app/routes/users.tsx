@@ -1,5 +1,5 @@
 import type { Route } from "./+types/users";
-import { Text, Stack } from "@chakra-ui/react";
+import Users from "../users/Users";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -8,12 +8,6 @@ export function meta({ }: Route.MetaArgs) {
   ];
 }
 
-export default function Users() {
-  return (
-    <Stack p={4}>
-      <Text>Users</Text>
-    </Stack>
-  );
-}
+export default Users;
 
 
