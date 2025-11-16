@@ -17,13 +17,13 @@ export default function Room() {
         <Image
           minH="280"
           objectFit="cover"
-          src="https://a0.muscache.com/im/pictures/miso/Hosting-47181423/original/39c9d4e7-78d0-4807-9f0d-3029d987d02a.jpeg?im_w=720"
+          src="https://media.vrbo.com/lodging/19000000/18770000/18763800/18763707/3036324a.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
           alt="Room preview"
           loading="lazy"
         />
         <Button
           aria-label="Add to wishlist"
-          variant={"unstyled"}
+          variant={"ghost"}
           position="absolute"
           top={0}
           right={0}
@@ -34,7 +34,7 @@ export default function Room() {
       </Box>
       <Box>
         <Grid gap={2} templateColumns={"6fr 1fr"}>
-          <Text display={"block"} as="b" noOfLines={1} fontSize="md" color={gray}>
+          <Text display={"block"} as="b" lineClamp={1} fontSize="md" color={gray}>
             Cheomdangwahak-ro,Jeongeup-si, North Jeolla Province, South Korea
           </Text>
           <HStack gap={1} alignItems="center">

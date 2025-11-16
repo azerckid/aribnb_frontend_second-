@@ -1,4 +1,4 @@
-import { Box, Button, Container, HStack, IconButton, Text } from "@chakra-ui/react";
+import { Box, Button, Container, HStack, IconButton, Stack, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
 
@@ -13,7 +13,12 @@ export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", 
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
             <Container maxW="7xl" py={4} >
-                <HStack justifyContent="space-between">
+                <Stack
+                    justifyContent="space-between"
+                    alignItems="center"
+                    direction={{ sm: "column", md: "row" }}
+                    gap={{ sm: 4, md: 0 }}
+                >
                     <Button asChild variant="ghost" colorPalette="red">
                         <RouterLink to="/">
                             <HStack gap={2}>
@@ -34,7 +39,7 @@ export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", 
                         <Button variant="ghost" onClick={onLoginClick}>Log in</Button>
                         <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
                     </HStack>
-                </HStack>
+                </Stack>
             </Container>
         </Box>
     );
