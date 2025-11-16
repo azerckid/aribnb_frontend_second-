@@ -6,12 +6,11 @@ import {
   HStack,
   Image,
   Text,
-  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 
 export default function Room() {
-  const gray = useColorModeValue("gray.600", "gray.300");
+  const gray = "gray.600";
   return (
     <VStack alignItems={"flex-start"} gap={2}>
       <Box position="relative" overflow={"hidden"} mb={3} rounded="2xl">
