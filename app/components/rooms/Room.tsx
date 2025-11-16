@@ -28,6 +28,7 @@ export default function Room() {
           top={0}
           right={0}
           color="white"
+          _hover={{ bg: "transparent" }}
         >
           <FaRegHeart size="20px" />
         </Button>
