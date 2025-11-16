@@ -1,0 +1,157 @@
+++
+title: Airbnb Clone — Cursor Rules
+description: Shared conventions for frontend (Vite + React + TypeScript + Chakra UI) integrating with a Django REST API.
+version: 1
+++
+
+## Stack and Architecture
+- Use Django as the API server. Frontend is a separate Vite + React + TypeScript app.
+- UI library: Chakra UI. Wrap the root app with `ChakraProvider` and enable system color mode.
+- API communication via `fetch` (preferred) or `axios` with a shared client module.
+- Keep backend/ frontend completely decoupled; all data via HTTP APIs.
+- Routing framework: React Router. Follow React Router conventions for data/loading and navigation.
+
+## Environment & Configuration
+- Define `VITE_API_BASE_URL` for API base URL. Do not hardcode URLs.
+- Use `import.meta.env.VITE_API_BASE_URL` from client code.
+- Keep secrets out of the repo; provide `.env.example`.
+
+## Authentication
+- Prefer JWT stored in HttpOnly cookies. Include `credentials: "include"` on requests.
+- If using CSRF-protected session auth, include CSRF header per Django settings.
+- Centralize auth handling (refresh, logout on 401) in the HTTP client.
+
+## CORS
+- Configure backend with `django-cors-headers`.
+- Allow origins for local dev and deployed frontend only. Do not use wildcard in production.
+
+## Data Fetching
+- Create a small API client wrapper:
+  - Automatically prefix with `VITE_API_BASE_URL`.
+  - Set `Content-Type: application/json` for JSON requests.
+  - `credentials: "include"` if cookie-based auth.
+  - Throw enriched errors including status and server message text.
+- Add lightweight runtime validation for critical payloads (e.g., with `zod`) where it meaningfully reduces risk.
+
+## Pagination (Django REST convention)
+- Assume `count`, `next`, `previous`, `results` structure.
+- Expose a reusable hook or utility to handle pagination state and fetching.
+
+## Chakra UI Conventions
+- Chakra v3 is used.
+- Wrap app with `ChakraProvider` and pass the system via `value={theme}`.
+- Use `<Theme appearance="system" />` for system color mode. Do not use `ColorModeScript`.
+- Theme setup in `app/theme.ts` should use `createSystem` + `defineConfig` (and may merge `defaultConfig`), not `extendTheme`.
+- Keep font tokens in v3 token format (e.g., `tokens.fonts.body.value`).
+- Prefer Chakra layout components (`Stack`, `Flex`, `Grid`, `SimpleGrid`) and responsive props.
+- Loading states: Use `Skeleton`, `Spinner`; avoid layout shift.
+- Accessibility: Always provide `aria-*` labels for icon-only `IconButton`s.
+
+## Styling & Components
+- Use Chakra components and props over custom CSS when possible.
+- Keep custom styles in `sx` or theme overrides instead of ad-hoc CSS.
+- Create small, composable presentational components; pages assemble them.
+
+## Error Handling & UX
+- API errors: Show user-friendly toasts via `useToast` and log details to console in development.
+- Form errors: Use Chakra `FormErrorMessage`.
+- Not-found/empty states: Provide clear, friendly messages with call-to-action.
+
+## TypeScript
+- Strongly type API responses and component props.
+- Avoid `any`; prefer explicit types and interfaces.
+- Co-locate types with modules or in a shared `types/` directory when reused.
+- Route file types import rule: In route files only, import route-generated types like this — `import type { Route } from "./+types/<route-file>";`. Do not import `Route` types inside `components/` (use local props/interfaces instead).
+
+## Code Style & Structure
+- Follow early returns and shallow nesting.
+- Avoid try/catch unless necessary; when used, handle meaningfully.
+- Keep files focused and small; extract hooks to `hooks/` and UI to `components/`.
+- Maintain consistent naming: functions are verbs, variables are nouns; avoid abbreviations.
+
+## Testing (lightweight)
+- For critical logic (auth, API utils), add unit tests.
+- Use component tests for complex UI interactions when practical.
+
+## Git & CI
+- Small, focused commits with clear messages.
+- If adding env vars or setup steps, update `README.md` and `.env.example`.
+
+## Performance
+- Use `React.memo` and `useMemo`/`useCallback` for expensive operations or large lists.
+- Defer non-critical requests; prefetch when it improves UX.
+- Prefer `Skeleton` placeholders instead of blank screens.
+
+## Routing
+- Follow the existing routing structure under `app/routes/`.
+- Keep route components lean; push logic into hooks/services.
+- Treat React Router as the baseline framework; prefer its loaders/actions and navigation patterns where applicable.
+
+## When editing code, prefer:
+- Using Chakra over raw HTML for layout and form controls.
+- Using shared API client utilities over ad-hoc `fetch` calls.
+- Returning early in components when loading or error states occur.
+
+## Non-goals
+- Do not introduce server-side rendering in the frontend app unless explicitly requested.
+- Avoid mixing multiple UI libraries.
+
+## Example snippets (guidance)
+
+Chakra v3 provider setup (conceptual):
+```tsx
+<ChakraProvider value={theme}>
+  <Theme appearance="system" />
+  {/* app routes */}
+</ChakraProvider>
+```
+
+Chakra v3 theme setup (conceptual):
+```ts
+import { createSystem, defineConfig, defaultConfig } from "@chakra-ui/react";
+
+const customConfig = defineConfig({
+  theme: {
+    tokens: {
+      fonts: {
+        heading: { value: "Inter, system-ui, sans-serif" },
+        body: { value: "Inter, system-ui, sans-serif" },
+      },
+    },
+  },
+});
+
+export const theme = createSystem(defaultConfig, customConfig);
+```
+
+API client shape (conceptual):
+```ts
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+```
+
+## Cursor-specific guidance
+- When generating UI, prefer Chakra components and responsive props.
+- When adding HTTP calls, use the shared API client and include credentials if cookie auth.
+- When suggesting new state or logic, favor extracted hooks and clear naming.
+- When touching files, respect existing indentation and formatting. Do not reformat unrelated code.
+
+## References
+- React Router Framework Installation: [reactrouter.com/start/framework/installation](https://reactrouter.com/start/framework/installation)
+- Chakra UI v3 Docs (Guide): [chakra-ui.com](https://chakra-ui.com)
+- Chakra UI v3 Theming (System): [chakra-ui.com/docs/styled-system/theming/overview](https://chakra-ui.com/docs/styled-system/theming/overview)
+- Chakra UI v3 Provider & Theme components: [chakra-ui.com/docs/styled-system/provider](https://chakra-ui.com/docs/styled-system/provider)
+- Migration notes (v2 → v3 overview): [chakra-ui.com/docs/upgrade/3x](https://chakra-ui.com/docs/upgrade/3x)
+
+
