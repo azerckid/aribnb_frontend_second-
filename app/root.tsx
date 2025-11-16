@@ -9,8 +9,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { ChakraProvider, Theme } from "@chakra-ui/react";
+import { ChakraProvider, Theme, Container, Stack, Heading, Text as CText, Button, Code } from "@chakra-ui/react";
 import { theme } from "./theme";
+import { Link as RouterLink } from "react-router";
 
 
 export const links: Route.LinksFunction = () => [
@@ -37,7 +38,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ChakraProvider value={theme}>
-          <Theme appearance="light">{children}</Theme>
+          <Theme appearance="light">
+            {children}
+          </Theme>
         </ChakraProvider>
         <ScrollRestoration />
         <Scripts />
@@ -67,14 +70,19 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <Container maxW="lg" py={16}>
+      <Stack gap={4}>
+        <Heading size="lg">{message}</Heading>
+        <CText color="fg.muted">{details}</CText>
+        <Button asChild colorPalette="red" variant="outline" alignSelf="start">
+          <RouterLink to="/">Go home →</RouterLink>
+        </Button>
+        {stack && (
+          <Code display="block" p={4} overflowX="auto">
+            {stack}
+          </Code>
+        )}
+      </Stack>
+    </Container>
   );
 }
