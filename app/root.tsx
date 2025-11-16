@@ -6,12 +6,11 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { useMemo, useState } from "react";
 import "./app.css";
 
 import type { Route } from "./+types/root";
 
-import { ChakraProvider, Theme } from "@chakra-ui/react";
+import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme";
 import { NotFound } from "./components/common/NotFound";
 
@@ -49,17 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  type Appearance = "light" | "dark";
-  const [appearance, setAppearance] = useState<Appearance>("light");
-  const ctx = useMemo(() => ({
-    appearance,
-    toggleAppearance: () => setAppearance((prev) => (prev === "dark" ? "light" : "dark")),
-  }), [appearance]);
-  return (
-    <Theme appearance={appearance}>
-      <Outlet context={ctx} />
-    </Theme>
-  );
+  return <Outlet />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
