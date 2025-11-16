@@ -24,6 +24,24 @@ Install the dependencies:
 npm install
 ```
 
+### Environment
+
+Create a `.env` file based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Set your API base URL (Django server):
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
+
+- Use `import.meta.env.VITE_API_BASE_URL` in client code; do not hardcode URLs.
+- If you use HttpOnly cookie-based auth, include `credentials: "include"` in `fetch`/client.
+- Configure Django CORS to allow the frontend origin in development and production.
+
 ### Development
 
 Start the development server with HMR:

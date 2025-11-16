@@ -5,13 +5,13 @@ import { LoginModal } from "../components/common/LoginModal";
 import { useDisclosure } from "@chakra-ui/react";
 
 export default function AppRouteLayout() {
-  const disclosure = useDisclosure();
-  return (
-    <AppLayout header={<Navigation onLoginClick={disclosure.onOpen} />}>
-      <Outlet />
-      <LoginModal isOpen={disclosure.open} onClose={disclosure.onClose} />
-    </AppLayout>
-  );
+    const disclosure = useDisclosure();
+    return (
+        <AppLayout header={<Navigation onLoginClick={disclosure.onOpen} />}>
+            <Outlet />
+            <LoginModal isOpen={disclosure.open} onClose={disclosure.onClose} />
+        </AppLayout>
+    );
 }
 
 
