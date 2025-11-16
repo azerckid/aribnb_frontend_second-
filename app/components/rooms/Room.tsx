@@ -38,17 +38,17 @@ export default function Room() {
           <Text display={"block"} as="b" lineClamp={1} fontSize="md" color={gray}>
             Cheomdangwahak-ro,Jeongeup-si, North Jeolla Province, South Korea
           </Text>
-          <HStack gap={1} alignItems="center">
+          <HStack gap={1} alignItems="center" color={gray} _hover={{ color: "red.500" }}>
             <FaStar size={15} />
-            <Text fontSize={"sm"} color={gray}>
+            <Text fontSize={"sm"}>
               5.0
             </Text>
           </HStack>
         </Grid>
-        <Text fontSize={"sm"} color={gray}>
+        <Text fontSize={"sm"}>
           Seoul, S. Korea
         </Text>
-        <Text fontSize={"sm"} color={gray}>
+        <Text fontSize={"sm"}>
           <Text as="b">$72</Text> / night
         </Text>
       </Box>
