@@ -11,8 +11,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({
-  children,
   header,
+  children,
   footer,
   fullBleed = false,
   contentMaxW = "1280px",

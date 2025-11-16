@@ -19,16 +19,14 @@ export default function AppRouteLayout() {
     return (
         <Theme appearance={appearance}>
             <AppLayout
-                header=
-                {
+                header={
                     <Navigation
                         onLoginClick={login.onOpen}
                         onSignUpClick={signup.onOpen}
                         appearance={appearance}
                         onToggleAppearance={toggleAppearance} />
                 }
-                footer=
-                {
+                footer={
                     <Footer />
                 }
             >

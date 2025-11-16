@@ -12,7 +12,7 @@ interface NavigationProps {
 export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", onToggleAppearance }: NavigationProps) {
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
-            <Container maxW="7xl" py={4}>
+            <Container maxW="7xl" py={4} >
                 <HStack justifyContent="space-between">
                     <Button asChild variant="ghost" colorPalette="red">
                         <RouterLink to="/">
