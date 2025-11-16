@@ -12,6 +12,7 @@ import {
     VStack,
 } from "@chakra-ui/react";
 import { FaUserNinja, FaLock } from "react-icons/fa";
+import { SocialLogin } from "./SocialLogin";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -62,6 +63,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         Log in
                     </Button>
                 </DialogFooter>
+                <Box px={6}>
+                    <SocialLogin />
+                </Box>
             </DialogContent>
         </DialogRoot>
     );

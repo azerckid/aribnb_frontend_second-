@@ -4,12 +4,12 @@ import { FaComment, FaGithub } from "react-icons/fa";
 export function SocialLogin() {
     return (
         <Box mb={4}>
-            <HStack my={8}>
-                <Separator />
+            <HStack my={8} w="100%">
+                <Separator flex="1" />
                 <Text textTransform={"uppercase"} color="fg.muted" fontSize="xs" as="b">
                     Or
                 </Text>
-                <Separator />
+                <Separator flex="1" />
             </HStack>
             <VStack>
                 <Button w="100%">
