@@ -3,9 +3,10 @@ import { Link as RouterLink } from "react-router";
 
 interface NavigationProps {
     onLoginClick?: () => void;
+    onSignUpClick?: () => void;
 }
 
-export function Navigation({ onLoginClick }: NavigationProps) {
+export function Navigation({ onLoginClick, onSignUpClick }: NavigationProps) {
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
             <Container maxW="7xl" py={4}>
@@ -19,7 +20,7 @@ export function Navigation({ onLoginClick }: NavigationProps) {
                     </Button>
                     <HStack gap={2}>
                         <Button variant="ghost" onClick={onLoginClick}>Log in</Button>
-                        <Button colorPalette="red">Sign up</Button>
+                        <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
                     </HStack>
                 </HStack>
             </Container>
