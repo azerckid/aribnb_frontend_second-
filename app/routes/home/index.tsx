@@ -1,8 +1,6 @@
 import type { Route } from "./+types/index";
 import { Grid } from "@chakra-ui/react";
-import { useCallback, useState } from "react";
 import Room from "../../components/rooms/Room";
-import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -12,14 +10,6 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const [itemCount, setItemCount] = useState(12);
-
-  const handleLoadMore = useCallback(() => {
-    setItemCount((prev) => prev + 12);
-  }, []);
-
-  const { setSentinel } = useInfiniteScroll(handleLoadMore);
-
   return (
     <Grid
       mt={10}
@@ -34,10 +24,9 @@ export default function Home() {
         "2xl": "repeat(5, 1fr)",
       }}
     >
-      {[...Array(itemCount)].map((_, index) => (
+      {[...Array(12)].map((_, index) => (
         <Room key={index} />
       ))}
-      <div ref={setSentinel} />
     </Grid>
   );
 }

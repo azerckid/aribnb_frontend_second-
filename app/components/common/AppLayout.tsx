@@ -1,6 +1,5 @@
 import { Box } from "@chakra-ui/react";
 import type React from "react";
-import { useLocation } from "react-router";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -19,9 +18,6 @@ export function AppLayout({
   contentMaxW = "1280px",
   contentPx = { base: 4, md: 6 },
 }: AppLayoutProps) {
-  const location = useLocation();
-  const isHome = location.pathname === "/";
-
   return (
     <Box minH="100dvh" display="flex" flexDir="column">
       <Box
@@ -33,7 +29,7 @@ export function AppLayout({
       >
         {header}
       </Box>
-      <Box as="main" flex="1" pb={isHome ? { base: 0, md: 24 } : 0}>
+      <Box as="main" flex="1">
         {fullBleed ? (
           children
         ) : (
@@ -42,14 +38,7 @@ export function AppLayout({
           </Box>
         )}
       </Box>
-      <Box
-        as="footer"
-        display={isHome ? { base: "none", md: "block" } : "block"}
-        position={isHome ? { base: "static", md: "fixed" } : "static"}
-        bottom={isHome ? { md: 0 } : undefined}
-        left={isHome ? { md: 0 } : undefined}
-        right={isHome ? { md: 0 } : undefined}
-      >
+      <Box as="footer">
         {footer}
       </Box>
     </Box>
