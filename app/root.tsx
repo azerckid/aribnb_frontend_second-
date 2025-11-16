@@ -9,9 +9,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { ChakraProvider, Theme, Container, Stack, Heading, Text as CText, Button, Code } from "@chakra-ui/react";
+import { ChakraProvider, Theme } from "@chakra-ui/react";
 import { theme } from "./theme";
-import { Link as RouterLink } from "react-router";
+import { NotFound } from "./components/NotFound";
 
 
 export const links: Route.LinksFunction = () => [
@@ -70,19 +70,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <Container maxW="lg" py={16}>
-      <Stack gap={4}>
-        <Heading size="lg">{message}</Heading>
-        <CText color="fg.muted">{details}</CText>
-        <Button asChild colorPalette="red" variant="outline" alignSelf="start">
-          <RouterLink to="/">Go home →</RouterLink>
-        </Button>
-        {stack && (
-          <Code display="block" p={4} overflowX="auto">
-            {stack}
-          </Code>
-        )}
-      </Stack>
-    </Container>
+    <NotFound title={message} description={details} stack={stack} />
   );
 }
