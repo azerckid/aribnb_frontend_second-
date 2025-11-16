@@ -11,7 +11,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { ChakraProvider, Theme } from "@chakra-ui/react";
 import { theme } from "./theme";
-import { NotFound } from "./common/NotFound";
+import { NotFound } from "./common/components/NotFound";
 
 
 export const links: Route.LinksFunction = () => [
