@@ -3,10 +3,9 @@ import { useNavigation } from "react-router";
 import type { Route } from "./+types/index";
 
 import { Grid } from "@chakra-ui/react";
-import { apiGet } from "../../utils/api";
-import Room from "../../components/rooms/Room";
-import RoomSkeleton from "../../components/rooms/RoomSkeleton";
-import type { IRoom } from "~/types";
+import { getRooms } from "~/utils/api";
+import Room from "~/components/rooms/Room";
+import RoomSkeleton from "~/components/rooms/RoomSkeleton";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -17,7 +16,7 @@ export function meta({ }: Route.MetaArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   try {
-    const rooms = await apiGet<IRoom[]>("/v1/rooms/");
+    const rooms = await getRooms();
     return { rooms };
   } catch (error) {
     console.error("Failed to fetch rooms:", error);
@@ -60,15 +59,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </>
       ) : null}
       {rooms.map((room) => (
-        <Room
-          key={room.pk}
-          imageUrl={room.photos[0]?.file || ""}
-          name={room.name}
-          rating={room.rating}
-          city={room.city}
-          country={room.country}
-          price={room.price}
-        />
+        <Room key={room.id || room.pk} {...room} />
       ))}
     </Grid>
   );
