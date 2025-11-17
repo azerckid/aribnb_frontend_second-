@@ -1,4 +1,4 @@
-import type { IRoom } from "~/types";
+import type { IRoom, IReview } from "~/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -22,5 +22,9 @@ export async function getRooms(): Promise<IRoom[]> {
 
 export async function getRoom(roomPk: number | string): Promise<IRoom> {
     return apiGet<IRoom>(`/rooms/${roomPk}`);
+}
+
+export async function getRoomReviews(roomPk: number | string): Promise<IReview[]> {
+    return apiGet<IReview[]>(`/rooms/${roomPk}/reviews`);
 }
 

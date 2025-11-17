@@ -20,6 +20,14 @@ export interface ICategory {
     kind: string;
 }
 
+export interface IReview {
+    user: IOwner;
+    payload: string;
+    rating: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface IRoom {
     id: number;
     pk?: number; // 하위 호환성을 위해 유지

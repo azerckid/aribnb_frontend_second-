@@ -1,5 +1,9 @@
 import type { Route } from "./+types/$roomPk";
-import { getRoom } from "~/utils/api";
+import { getRoom, getRoomReviews } from "~/utils/api";
+import { Box, Container, Grid, HStack, Heading, Image, Skeleton, Text, VStack } from "@chakra-ui/react";
+import { Avatar } from "@chakra-ui/react";
+import { useNavigation } from "react-router";
+import { FaStar } from "react-icons/fa";
 
 export function meta({ }: Route.MetaArgs) {
     return [
@@ -10,8 +14,11 @@ export function meta({ }: Route.MetaArgs) {
 
 export async function loader({ params }: Route.LoaderArgs) {
     try {
-        const room = await getRoom(params.roomPk);
-        return { room };
+        const [room, reviews] = await Promise.all([
+            getRoom(params.roomPk),
+            getRoomReviews(params.roomPk).catch(() => []), // 리뷰가 없어도 에러가 나지 않도록
+        ]);
+        return { room, reviews };
     } catch (error) {
         console.error("Failed to fetch room:", error);
         throw new Response("Room not found", { status: 404 });
@@ -19,29 +26,157 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export default function RoomDetail({ loaderData }: Route.ComponentProps) {
-    const { room } = loaderData;
+    const { room, reviews } = loaderData;
+    const navigation = useNavigation();
+    const isLoading = navigation.state === "loading";
+
+    // 최대 5개의 사진만 표시 (첫 번째는 2x2, 나머지 4개는 1x1)
+    const displayPhotos = room.photos.slice(0, 5);
 
     return (
-        <div>
-            <h1>{room.name}</h1>
-            <p>{room.city}, {room.country}</p>
-            <p>${room.price} / night</p>
-            <p>Rating: {room.rating}</p>
-            <p>Photos: {room.photos.map((photo) => photo.file).join(", ")}</p>
-            <p>Owner: {room.owner.name}</p>
-            <p>Amenities: {room.amenities.map((amenity) => amenity.name).join(", ")}</p>
-            <p>Category: {room.category.name}</p>
-            <p>Beds: {room.beds.length}</p>
-            <p>Rooms: {room.rooms}</p>
-            <p>Toilets: {room.toilets}</p>
-            <p>Description: {room.description}</p>
-            <p>Address: {room.address}</p>
-            <p>Pet Friendly: {room.pet_friendly ? "Yes" : "No"}</p>
-            <p>Kind: {room.kind}</p>
-            <p>Created At: {room.created_at}</p>
-            <p>Updated At: {room.updated_at}</p>
+        <Box
+            mt={10}
+            pb={40}
+            px={{
+                base: 0,
+                lg: 0,
+            }}
+        >
+            {isLoading ? (
+                <Skeleton height="43px" width="25%" />
+            ) : (
+                <Heading>{room.name}</Heading>
+            )}
 
-        </div>
+            <Grid
+                mt={8}
+                rounded="xl"
+                overflow="hidden"
+                gap={2}
+                height="60vh"
+                templateRows="1fr 1fr"
+                templateColumns="repeat(4, 1fr)"
+            >
+                {[0, 1, 2, 3, 4].map((index) => {
+                    const photo = displayPhotos[index];
+                    if (!photo) return null;
+
+                    const isFirst = index === 0;
+                    return (
+                        <Box
+                            key={photo.pk}
+                            gridColumn={isFirst ? "span 2" : "span 1"}
+                            gridRow={isFirst ? "span 2" : "span 1"}
+                            overflow="hidden"
+                        >
+                            {isLoading ? (
+                                <Skeleton h="100%" w="100%" />
+                            ) : (
+                                <Image
+                                    objectFit="cover"
+                                    w="100%"
+                                    h="100%"
+                                    src={photo.file}
+                                    alt={photo.description || room.name}
+                                    loading="lazy"
+                                />
+                            )}
+                        </Box>
+                    );
+                })}
+            </Grid>
+
+            <HStack width="40%" justifyContent="space-between" mt={10}>
+                <VStack alignItems="flex-start">
+                    {isLoading ? (
+                        <Skeleton height="30px" width="300px" />
+                    ) : (
+                        <Heading fontSize="2xl">
+                            House hosted by {room.owner.name}
+                        </Heading>
+                    )}
+                    {isLoading ? (
+                        <Skeleton height="30px" width="200px" />
+                    ) : (
+                        <HStack justifyContent="flex-start" w="100%">
+                            <Text>
+                                {room.toilets} toilet{room.toilets === 1 ? "" : "s"}
+                            </Text>
+                            <Text>∙</Text>
+                            <Text>
+                                {room.rooms} room{room.rooms === 1 ? "" : "s"}
+                            </Text>
+                        </HStack>
+                    )}
+                </VStack>
+                {isLoading ? (
+                    <Skeleton width="80px" height="80px" rounded="full" />
+                ) : (
+                    <Avatar.Root size="xl">
+                        <Avatar.Image src={room.owner.avatar} alt={room.owner.name} />
+                        <Avatar.Fallback name={room.owner.name} />
+                    </Avatar.Root>
+                )}
+            </HStack>
+
+            <Box mt={10}>
+                <Heading fontSize="2xl" mb={5}>
+                    <HStack>
+                        <FaStar /> <Text>{room.rating}</Text>
+                        <Text>∙</Text>
+                        <Text>
+                            {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                        </Text>
+                    </HStack>
+                </Heading>
+
+                {reviews.length > 0 && (
+                    <Container mt={16} maxW="container.lg" mx="0">
+                        <Grid
+                            templateColumns={{
+                                base: "1fr",
+                                md: "1fr 1fr",
+                            }}
+                            gap={10}
+                        >
+                            {reviews.map((review, index) => (
+                                <VStack key={index} alignItems="flex-start" gap={3}>
+                                    <HStack gap={3} alignItems="flex-start">
+                                        <Avatar.Root size="md">
+                                            <Avatar.Image src={review.user.avatar} alt={review.user.name || review.user.username} />
+                                            <Avatar.Fallback name={review.user.name || review.user.username} />
+                                        </Avatar.Root>
+                                        <VStack alignItems="flex-start" gap={1} flex={1}>
+                                            <Text fontWeight="bold" fontSize="md">
+                                                {review.user.name || review.user.username}
+                                            </Text>
+                                            <HStack gap={1} alignItems="center">
+                                                <FaStar size={12} />
+                                                <Text fontSize="sm">{review.rating}</Text>
+                                                {review.created_at && (
+                                                    <>
+                                                        <Text fontSize="sm" color="gray.500">∙</Text>
+                                                        <Text fontSize="sm" color="gray.500">
+                                                            {new Date(review.created_at).toLocaleDateString("en-US", {
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            })}
+                                                        </Text>
+                                                    </>
+                                                )}
+                                            </HStack>
+                                        </VStack>
+                                    </HStack>
+                                    <Text fontSize="sm" color="gray.600" lineHeight="tall">
+                                        {review.payload}
+                                    </Text>
+                                </VStack>
+                            ))}
+                        </Grid>
+                    </Container>
+                )}
+            </Box>
+        </Box>
     );
 }
 

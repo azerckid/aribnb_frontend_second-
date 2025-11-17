@@ -4,7 +4,7 @@
  */
 
 // Domain-specific types
-export type { IRoom, IPhoto } from "./room";
+export type { IRoom, IPhoto, IReview, IOwner, IAmenity, ICategory } from "./room";
 export type { PaginatedResponse, BaseEntity } from "./common";
 
 // Re-export all types for convenience
