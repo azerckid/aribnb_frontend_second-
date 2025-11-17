@@ -9,7 +9,7 @@ version: 1
 - UI library: Chakra UI. Wrap the root app with `ChakraProvider` and enable system color mode.
 - API communication via `fetch` (preferred) or `axios` with a shared client module.
 - Keep backend/ frontend completely decoupled; all data via HTTP APIs.
-- Routing framework: React Router. Follow React Router conventions for data/loading and navigation.
+- Routing framework: **React Router Framework** (not React Router library). Follow React Router Framework conventions for data/loading and navigation.
 
 ## Environment & Configuration
 - Define `VITE_API_BASE_URL` for API base URL. Do not hardcode URLs.
@@ -87,10 +87,15 @@ version: 1
 - Defer non-critical requests; prefetch when it improves UX.
 - Prefer `Skeleton` placeholders instead of blank screens.
 
-## Routing
+## Routing (React Router Framework)
 - Follow the existing routing structure under `app/routes/`.
 - Keep route components lean; push logic into hooks/services.
-- Treat React Router as the baseline framework; prefer its loaders/actions and navigation patterns where applicable.
+- **React Router Framework pattern**: Route components receive `loaderData` as props, not via `useLoaderData()` hook.
+  - Use `Route.ComponentProps` type for component props: `export default function MyRoute({ loaderData }: Route.ComponentProps)`
+  - Access loader data via `loaderData` prop: `const { data } = loaderData;`
+  - Import route types: `import type { Route } from "./+types/<route-file>";`
+  - Define loaders: `export async function loader({ request }: Route.LoaderArgs) { return { data }; }`
+- Prefer React Router Framework's loaders/actions and navigation patterns where applicable.
 
 ## When editing code, prefer:
 - Using Chakra over raw HTML for layout and form controls.

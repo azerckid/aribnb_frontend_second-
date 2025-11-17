@@ -1,6 +1,12 @@
+import { useNavigation } from "react-router";
+
 import type { Route } from "./+types/index";
+
 import { Grid } from "@chakra-ui/react";
+import { apiGet } from "../../utils/api";
 import Room from "../../components/rooms/Room";
+import RoomSkeleton from "../../components/rooms/RoomSkeleton";
+import type { IRoom } from "~/types";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -9,7 +15,21 @@ export function meta({ }: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
+export async function loader({ request }: Route.LoaderArgs) {
+  try {
+    const rooms = await apiGet<IRoom[]>("/v1/rooms/");
+    return { rooms };
+  } catch (error) {
+    console.error("Failed to fetch rooms:", error);
+    return { rooms: [] };
+  }
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { rooms } = loaderData;
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
+
   return (
     <Grid
       mt={10}
@@ -25,8 +45,30 @@ export default function Home() {
         "2xl": "repeat(5, 1fr)",
       }}
     >
-      {[...Array(12)].map((_, index) => (
-        <Room key={index} />
+      {isLoading ? (
+        <>
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+          <RoomSkeleton />
+        </>
+      ) : null}
+      {rooms.map((room) => (
+        <Room
+          key={room.pk}
+          imageUrl={room.photos[0]?.file || ""}
+          name={room.name}
+          rating={room.rating}
+          city={room.city}
+          country={room.country}
+          price={room.price}
+        />
       ))}
     </Grid>
   );
