@@ -13,6 +13,7 @@ import type { Route } from "./+types/root";
 import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme";
 import { NotFound } from "./components/common/NotFound";
+import { Toaster } from "./components/ui/toaster";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -39,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <ChakraProvider value={theme}>
           {children}
+          <Toaster />
         </ChakraProvider>
         <ScrollRestoration />
         <Scripts />

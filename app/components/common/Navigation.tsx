@@ -1,15 +1,19 @@
-import { Box, Button, Container, HStack, IconButton, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Stack, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
+import type { IUser } from "~/types";
 
 interface NavigationProps {
+    user: IUser | null;
+    isLoggedIn: boolean;
     onLoginClick?: () => void;
     onSignUpClick?: () => void;
+    onLogoutSuccess?: () => void;
     appearance?: "light" | "dark";
     onToggleAppearance?: () => void;
 }
 
-export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", onToggleAppearance }: NavigationProps) {
+export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLogoutSuccess, appearance = "light", onToggleAppearance }: NavigationProps) {
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
             <Container maxW="7xl" py={4} >
@@ -36,8 +40,28 @@ export function Navigation({ onLoginClick, onSignUpClick, appearance = "light", 
                                 {appearance === "dark" ? <FaSun /> : <FaMoon />}
                             </IconButton>
                         )}
-                        <Button variant="ghost" onClick={onLoginClick}>Log in</Button>
-                        <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
+                        {!isLoggedIn ? (
+                            <>
+                                <Button variant="ghost" onClick={onLoginClick}>Log in</Button>
+                                <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
+                            </>
+                        ) : (
+                            <Menu.Root>
+                                <Menu.Trigger asChild>
+                                    <Button variant="ghost" p={0}>
+                                        <Avatar.Root size="md">
+                                            <Avatar.Image src={user?.avatar || ""} alt={user?.name || "User"} />
+                                            <Avatar.Fallback name={user?.name || "User"} />
+                                        </Avatar.Root>
+                                    </Button>
+                                </Menu.Trigger>
+                                <Menu.Content>
+                                    <Menu.Item value="logout" onClick={onLogoutSuccess}>
+                                        Log out
+                                    </Menu.Item>
+                                </Menu.Content>
+                            </Menu.Root>
+                        )}
                     </HStack>
                 </Stack>
             </Container>
