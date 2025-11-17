@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Portal, Stack, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
 import type { IUser } from "~/types";
@@ -46,7 +46,7 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                 <Button colorPalette="red" onClick={onSignUpClick}>Sign up</Button>
                             </>
                         ) : (
-                            <Menu.Root>
+                            <Menu.Root positioning={{ placement: "bottom-end" }}>
                                 <Menu.Trigger asChild>
                                     <Button variant="ghost" p={0}>
                                         <Avatar.Root size="md">
@@ -55,11 +55,13 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                         </Avatar.Root>
                                     </Button>
                                 </Menu.Trigger>
-                                <Menu.Content>
-                                    <Menu.Item value="logout" onClick={onLogoutSuccess}>
-                                        Log out
-                                    </Menu.Item>
-                                </Menu.Content>
+                                <Menu.Positioner>
+                                    <Menu.Content>
+                                        <Menu.Item value="logout" onClick={onLogoutSuccess}>
+                                            Log out
+                                        </Menu.Item>
+                                    </Menu.Content>
+                                </Menu.Positioner>
                             </Menu.Root>
                         )}
                     </HStack>

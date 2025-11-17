@@ -44,20 +44,35 @@ export default function AppRouteLayout({ loaderData }: Route.ComponentProps) {
                         onLogoutSuccess={async () => {
                             const { logout } = await import("~/utils/api");
                             const { toaster } = await import("~/components/ui/toaster");
+
+                            // 로딩 토스트 표시
+                            const loadingToastId = toaster.create({
+                                title: "로그아웃 중...",
+                                description: "잠시만 기다려주세요.",
+                                type: "loading",
+                                duration: 10000, // 충분한 시간 확보
+                            });
+
                             try {
                                 await logout();
-                                toaster.create({
-                                    title: "로그아웃 성공",
+
+                                // 로딩 토스트를 성공 토스트로 업데이트
+                                toaster.update(loadingToastId, {
+                                    title: "Logged out successfully",
+                                    description: "see you soon!",
                                     type: "success",
                                     duration: 2000,
                                 });
+
                                 // 약간의 지연을 두고 revalidate (쿠키가 삭제될 시간을 줌)
                                 setTimeout(() => {
                                     revalidator.revalidate();
                                 }, 200);
                             } catch (error) {
                                 console.error("Logout failed:", error);
-                                toaster.create({
+
+                                // 로딩 토스트를 에러 토스트로 업데이트
+                                toaster.update(loadingToastId, {
                                     title: "로그아웃 실패",
                                     description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
                                     type: "error",
