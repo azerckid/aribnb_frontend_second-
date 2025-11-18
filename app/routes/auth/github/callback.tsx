@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useRevalidator } from "react-router";
 import { Spinner, VStack, Container } from "@chakra-ui/react";
 import { toaster } from "~/components/ui/toaster";
-import { getCsrfToken } from "~/utils/api";
+import { oauthCallback } from "~/utils/api";
 
 import type { Route } from "./+types/callback";
 
@@ -46,26 +46,7 @@ export default function GitHubCallback({ loaderData }: Route.ComponentProps) {
         });
 
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-            const csrfToken = getCsrfToken();
-            const headers: Record<string, string> = {
-                "Content-Type": "application/json",
-            };
-            if (csrfToken) {
-                headers["X-CSRFToken"] = csrfToken;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/users/github/callback`, {
-                method: "POST",
-                credentials: "include", // 쿠키 저장을 위해 필수
-                headers,
-                body: JSON.stringify({ code }),
-            });
-
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(text || "GitHub 로그인 처리 실패");
-            }
+            await oauthCallback("github", code);
 
             // 성공 시 토스트 업데이트
             toaster.update(loadingToastId, {

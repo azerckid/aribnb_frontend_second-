@@ -173,3 +173,33 @@ export async function logout(): Promise<void> {
     }
 }
 
+/**
+ * OAuth 소셜 로그인 콜백 처리
+ * @param provider OAuth 제공자 ('github' | 'kakao')
+ * @param code OAuth 인증 코드
+ * @throws {Error} API 호출 실패 시 에러
+ */
+export async function oauthCallback(provider: "github" | "kakao", code: string): Promise<void> {
+    const url = `${API_BASE_URL}/users/${provider}/callback`;
+    const csrfToken = getCsrfToken();
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    const res = await fetch(url, {
+        method: "POST",
+        credentials: "include", // 쿠키 저장을 위해 필수
+        headers: headers as HeadersInit,
+        body: JSON.stringify({ code }),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `${provider} 로그인 처리 실패`);
+    }
+}
+

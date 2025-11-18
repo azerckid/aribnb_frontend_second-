@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Separator, Stack, Text, VStack } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
 import type { IUser } from "~/types";
@@ -57,6 +57,24 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                 </Menu.Trigger>
                                 <Menu.Positioner>
                                     <Menu.Content>
+                                        {/* 유저 정보 표시 */}
+                                        <Box px={3} py={2} userSelect="none">
+                                            <HStack gap={3}>
+                                                <Avatar.Root size="sm">
+                                                    <Avatar.Image src={user?.avatar || ""} alt={user?.name || "User"} />
+                                                    <Avatar.Fallback name={user?.name || "User"} />
+                                                </Avatar.Root>
+                                                <VStack gap={0.5} align="start" flex={1} minW={0}>
+                                                    <Text fontWeight="semibold" fontSize="sm" truncate>
+                                                        {user?.name || "User"}
+                                                    </Text>
+                                                    <Text fontSize="xs" color="fg.muted" truncate>
+                                                        {user?.email || ""}
+                                                    </Text>
+                                                </VStack>
+                                            </HStack>
+                                        </Box>
+                                        <Separator />
                                         <Menu.Item value="logout" onClick={onLogoutSuccess}>
                                             Log out
                                         </Menu.Item>
