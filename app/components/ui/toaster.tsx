@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react"
 
 export const toaster = createToaster({
-    placement: "top",
+    placement: "bottom",
 })
 
 export function Toaster() {
@@ -18,7 +18,7 @@ export function Toaster() {
             {(toast) => {
                 console.log("Rendering toast:", toast);
                 return (
-                    <ToastRoot>
+                    <ToastRoot maxW="400px" w="100%">
                         <ToastIndicator />
                         {toast.title && <ToastTitle>{toast.title}</ToastTitle>}
                         {toast.description && <ToastDescription>{toast.description}</ToastDescription>}
