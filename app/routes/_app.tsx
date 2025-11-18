@@ -17,10 +17,19 @@ export async function loader({ request }: Route.LoaderArgs) {
         // request에서 쿠키를 가져와서 API 호출에 전달
         const cookie = request.headers.get("Cookie");
         const user = await getMe(cookie || undefined);
-        console.log("Loader: User loaded", user);
         return { user, isLoggedIn: true };
     } catch (error) {
-        console.log("Loader: User not logged in", error instanceof Error ? error.message : error);
+        // 401/403은 정상적인 상황(로그인하지 않은 사용자)이므로 조용히 처리
+        // 개발 환경에서만 디버깅을 위해 로그 출력
+        if (import.meta.env.DEV) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // UNAUTHORIZED 에러는 정상적인 상황이므로 간단히만 로그
+            if (errorMessage.includes("UNAUTHORIZED")) {
+                // 조용히 처리 (로그 제거)
+            } else {
+                console.log("Loader: Unexpected error", errorMessage);
+            }
+        }
         return { user: null, isLoggedIn: false };
     }
 }

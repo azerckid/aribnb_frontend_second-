@@ -73,8 +73,8 @@ export async function apiGet<T>(path: string, init?: ApiGetOptions): Promise<T> 
 
     if (!res.ok) {
         const text = await res.text();
-        // 401은 인증되지 않은 상태이므로 정상적인 응답으로 처리
-        if (res.status === 401) {
+        // 401, 403은 인증되지 않은 상태이므로 정상적인 응답으로 처리
+        if (res.status === 401 || res.status === 403) {
             throw new Error(`UNAUTHORIZED: ${text}`);
         }
         throw new Error(`API ${res.status}: ${text}`);
@@ -117,6 +117,14 @@ export async function login(username: string, password: string): Promise<void> {
 
     if (!res.ok) {
         const text = await res.text();
+        // 개발 환경에서 상세 에러 로깅
+        if (import.meta.env.DEV) {
+            console.error("Login API error:", {
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+            });
+        }
         throw new Error(`Login failed: ${text}`);
     }
 }

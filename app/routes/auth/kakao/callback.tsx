@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Spinner, VStack, Text, Container } from "@chakra-ui/react";
+import { Spinner, VStack, Container } from "@chakra-ui/react";
 import { toaster } from "~/components/ui/toaster";
 
 export default function KakaoCallback() {
@@ -37,15 +37,48 @@ export default function KakaoCallback() {
                 return;
             }
 
+            // 로딩 토스트 표시
+            let loadingToastId: string | undefined;
+
             try {
+                loadingToastId = toaster.create({
+                    title: "카카오 로그인 처리 중",
+                    description: "잠시만 기다려주세요...",
+                    type: "loading",
+                    duration: 10000, // 충분한 시간 확보
+                });
+
                 // 백엔드로 인증 코드 전달
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+                // CSRF 토큰 가져오기
+                const getCsrfToken = (): string | null => {
+                    if (typeof document === "undefined") return null;
+                    const name = "csrftoken";
+                    if (document.cookie && document.cookie !== "") {
+                        const cookies = document.cookie.split(";");
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === name + "=") {
+                                return decodeURIComponent(cookie.substring(name.length + 1));
+                            }
+                        }
+                    }
+                    return null;
+                };
+
+                const csrfToken = getCsrfToken();
+                const headers: Record<string, string> = {
+                    "Content-Type": "application/json",
+                };
+                if (csrfToken) {
+                    headers["X-CSRFToken"] = csrfToken;
+                }
+
                 const response = await fetch(`${API_BASE_URL}/users/kakao/callback`, {
                     method: "POST",
                     credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers,
                     body: JSON.stringify({ code }),
                 });
 
@@ -53,8 +86,8 @@ export default function KakaoCallback() {
                     throw new Error("카카오 로그인 처리 실패");
                 }
 
-                // 성공 시 홈으로 리다이렉트
-                toaster.create({
+                // 로딩 토스트를 성공 토스트로 업데이트
+                toaster.update(loadingToastId, {
                     title: "카카오 로그인 성공",
                     description: "환영합니다!",
                     type: "success",
@@ -65,12 +98,24 @@ export default function KakaoCallback() {
                 window.location.href = "/";
             } catch (error) {
                 console.error("Kakao callback error:", error);
-                toaster.create({
-                    title: "카카오 로그인 실패",
-                    description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
-                    type: "error",
-                    duration: 3000,
-                });
+
+                // 로딩 토스트를 에러 토스트로 업데이트
+                const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+                if (typeof loadingToastId !== "undefined") {
+                    toaster.update(loadingToastId, {
+                        title: "카카오 로그인 실패",
+                        description: errorMessage,
+                        type: "error",
+                        duration: 3000,
+                    });
+                } else {
+                    toaster.create({
+                        title: "카카오 로그인 실패",
+                        description: errorMessage,
+                        type: "error",
+                        duration: 3000,
+                    });
+                }
                 navigate("/");
             }
         };
@@ -82,7 +127,6 @@ export default function KakaoCallback() {
         <Container maxW="md" py={20}>
             <VStack gap={4} align="center">
                 <Spinner size="xl" />
-                <Text>카카오 로그인 처리 중...</Text>
             </VStack>
         </Container>
     );
