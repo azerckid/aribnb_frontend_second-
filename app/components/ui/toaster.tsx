@@ -1,5 +1,5 @@
-import { 
-    Toaster as ChakraToaster, 
+import {
+    Toaster as ChakraToaster,
     createToaster,
     ToastRoot,
     ToastIndicator,

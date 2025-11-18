@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Portal, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Stack, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
 import type { IUser } from "~/types";
