@@ -50,18 +50,27 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
         try {
             await login(username, password);
-            toaster.create({
-                title: "로그인 성공",
-                type: "success",
-                duration: 2000,
-            });
-            onClose();
+            
+            // 폼 초기화
             setUsername("");
             setPassword("");
-            // 약간의 지연을 두고 revalidate 호출 (쿠키가 설정될 시간을 줌)
+            
+            // 모달 먼저 닫기
+            onClose();
+            
+            // 모달이 완전히 닫힌 후 토스트 생성 (모달의 DOM 변경이 토스트에 영향을 주지 않도록)
             setTimeout(() => {
-                onLoginSuccess?.();
-            }, 100);
+                toaster.create({
+                    title: "로그인 성공",
+                    type: "success",
+                    duration: 5000,
+                });
+                
+                // 충분한 지연 후 revalidate (토스트가 보이도록, 쿠키가 설정될 시간도 확보)
+                setTimeout(() => {
+                    onLoginSuccess?.();
+                }, 500);
+            }, 200);
         } catch (error) {
             let errorMessage = "알 수 없는 오류가 발생했습니다.";
 

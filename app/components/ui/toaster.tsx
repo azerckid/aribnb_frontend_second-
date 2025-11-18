@@ -17,8 +17,13 @@ export function Toaster() {
         <ChakraToaster toaster={toaster}>
             {(toast) => {
                 console.log("Rendering toast:", toast);
+                const type = (toast as any).type || "info";
                 return (
-                    <ToastRoot maxW="400px" w="100%">
+                    <ToastRoot
+                        maxW="400px"
+                        w="100%"
+                        colorPalette={type === "success" ? "green" : type === "error" ? "red" : type === "loading" ? "blue" : "gray"}
+                    >
                         <ToastIndicator />
                         {toast.title && <ToastTitle>{toast.title}</ToastTitle>}
                         {toast.description && <ToastDescription>{toast.description}</ToastDescription>}

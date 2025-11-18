@@ -10,12 +10,13 @@ import {
     DialogHeader,
     DialogPositioner,
     DialogRoot,
+    IconButton,
     Input,
     VStack,
 } from "@chakra-ui/react";
-import { FaEnvelope, FaLock, FaUserNinja, FaUserSecret } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaUserNinja, FaUserSecret, FaEye, FaEyeSlash } from "react-icons/fa";
 import { SocialLogin } from "./SocialLogin";
-import { signUp } from "~/utils/api";
+import { signUp, login } from "~/utils/api";
 import { toaster } from "~/components/ui/toaster";
 import { signUpSchema } from "~/utils/validation";
 
@@ -30,13 +31,16 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [passwordConfirm, setPasswordConfirm] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // 입력값 검증
-        const validationResult = signUpSchema.safeParse({ name, email, username, password });
+        const validationResult = signUpSchema.safeParse({ name, email, username, password, passwordConfirm });
         if (!validationResult.success) {
             const firstError = validationResult.error.issues[0];
             toaster.create({
@@ -51,18 +55,38 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
         setIsLoading(true);
 
         try {
+            // 회원가입
             await signUp(name, email, username, password);
-            toaster.create({
-                title: "회원가입 성공",
-                type: "success",
-                duration: 2000,
-            });
-            onClose();
+
+            // 회원가입 성공 후 자동 로그인
+            await login(username, password);
+
+            // 폼 초기화
             setName("");
             setEmail("");
             setUsername("");
             setPassword("");
-            onSignUpSuccess?.();
+            setPasswordConfirm("");
+            setShowPassword(false);
+            setShowPasswordConfirm(false);
+
+            // 모달 먼저 닫기
+            onClose();
+
+            // 모달이 완전히 닫힌 후 토스트 생성 (모달의 DOM 변경이 토스트에 영향을 주지 않도록)
+            setTimeout(() => {
+                toaster.create({
+                    title: "회원가입 성공",
+                    description: "자동으로 로그인되었습니다.",
+                    type: "success",
+                    duration: 5000,
+                });
+
+                // 충분한 지연 후 revalidate (토스트가 보이도록)
+                setTimeout(() => {
+                    onSignUpSuccess?.();
+                }, 500);
+            }, 200);
         } catch (error) {
             toaster.create({
                 title: "회원가입 실패",
@@ -152,9 +176,10 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
                                 <Box position="relative" w="100%">
                                     <Input
                                         pl="10"
+                                        pr="10"
                                         variant="outline"
                                         placeholder="Password"
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -170,6 +195,55 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
                                     >
                                         <FaLock size={18} />
                                     </Box>
+                                    <IconButton
+                                        position="absolute"
+                                        insetY="0"
+                                        right="0"
+                                        variant="ghost"
+                                        size="sm"
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        color="gray.500"
+                                        _hover={{ color: "gray.700" }}
+                                    >
+                                        {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+                                    </IconButton>
+                                </Box>
+                                <Box position="relative" w="100%">
+                                    <Input
+                                        pl="10"
+                                        pr="10"
+                                        variant="outline"
+                                        placeholder="Confirm Password"
+                                        type={showPasswordConfirm ? "text" : "password"}
+                                        value={passwordConfirm}
+                                        onChange={(e) => setPasswordConfirm(e.target.value)}
+                                        required
+                                    />
+                                    <Box
+                                        position="absolute"
+                                        insetY="0"
+                                        left="3"
+                                        display="flex"
+                                        alignItems="center"
+                                        color="gray.300"
+                                        pointerEvents="none"
+                                    >
+                                        <FaLock size={18} />
+                                    </Box>
+                                    <IconButton
+                                        position="absolute"
+                                        insetY="0"
+                                        right="0"
+                                        variant="ghost"
+                                        size="sm"
+                                        aria-label={showPasswordConfirm ? "Hide password" : "Show password"}
+                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                        color="gray.500"
+                                        _hover={{ color: "gray.700" }}
+                                    >
+                                        {showPasswordConfirm ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+                                    </IconButton>
                                 </Box>
                             </VStack>
                         </DialogBody>
