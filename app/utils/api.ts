@@ -3,7 +3,7 @@ import type { IRoom, IReview, IUser } from "~/types";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // CSRF 토큰 가져오기
-function getCsrfToken(): string | null {
+export function getCsrfToken(): string | null {
     // 서버 사이드 렌더링에서는 document가 없음
     if (typeof document === "undefined") {
         return null;
