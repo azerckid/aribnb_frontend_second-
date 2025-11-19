@@ -1,5 +1,5 @@
 import { Form, redirect, useActionData, useNavigation } from "react-router";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import type { Route } from "./+types/$roomPk.photos";
 
@@ -10,6 +10,7 @@ import {
     Heading,
     Image,
     Input,
+    Textarea,
     VStack,
     Text,
     HStack,
@@ -56,7 +57,30 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     const formData = await request.formData();
+
+    // 디버깅: FormData 내용 확인
+    if (import.meta.env.DEV) {
+        console.log("Action - FormData entries:", Array.from(formData.entries()).map(([key, value]) => {
+            if (value instanceof File) {
+                return [key, { valueType: "File", name: value.name, size: value.size, mimeType: value.type }];
+            }
+            return [key, value];
+        }));
+    }
+
     const file = formData.get("file") as File | null;
+    const description = (formData.get("description") as string) || "";
+
+    // 디버깅: 파일 정보 확인
+    if (import.meta.env.DEV) {
+        console.log("Action - file:", file ? {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
+        } : null);
+        console.log("Action - description:", description);
+    }
 
     if (!file) {
         return {
@@ -64,9 +88,16 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
     }
 
+    // 파일이 비어있는지 확인
+    if (file.size === 0) {
+        return {
+            error: "The selected file is empty. Please select a valid image file.",
+        };
+    }
+
     try {
         const cookie = request.headers.get("Cookie");
-        await uploadRoomPhoto(Number(roomPk), file, cookie || undefined);
+        await uploadRoomPhoto(Number(roomPk), file, description, cookie || undefined);
 
         return redirect(`/rooms/${roomPk}`);
     } catch (error) {
@@ -87,6 +118,24 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
     const isSubmitting = navigation.state === "submitting";
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [description, setDescription] = useState<string>("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // 업로드 성공 후 폼 리셋 (redirect 전에 실행됨)
+    useEffect(() => {
+        // navigation.state가 "idle"로 돌아오면 업로드가 완료된 것
+        // actionData가 없고 navigation이 idle이면 성공적으로 리다이렉트된 것
+        if (navigation.state === "idle" && !actionData?.error) {
+            // 상태 리셋
+            setSelectedFile(null);
+            setPreview(null);
+            setDescription("");
+            // 파일 input 리셋
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    }, [navigation.state, actionData]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -97,6 +146,10 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
                 setPreview(reader.result as string);
             };
             reader.readAsDataURL(file);
+        } else {
+            // 파일이 선택되지 않았을 때 상태 리셋
+            setSelectedFile(null);
+            setPreview(null);
         }
     };
 
@@ -176,6 +229,7 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
                                         </VStack>
                                     )}
                                     <Input
+                                        ref={fileInputRef}
                                         name="file"
                                         type="file"
                                         accept="image/*"
@@ -191,6 +245,22 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
                                         style={{ position: "absolute" }}
                                     />
                                 </Box>
+                            </Box>
+
+                            <Box w="100%">
+                                <Text mb={2} fontWeight="medium">
+                                    Photo Description (Optional)
+                                </Text>
+                                <Textarea
+                                    name="description"
+                                    placeholder="Describe this photo..."
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    rows={4}
+                                />
+                                <Text fontSize="sm" color="gray.500" mt={1}>
+                                    Add a description to help guests understand this photo
+                                </Text>
                             </Box>
 
                             {actionData?.error && (

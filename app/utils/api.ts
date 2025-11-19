@@ -378,6 +378,7 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
  * 방에 사진을 업로드합니다.
  * @param roomPk 방 ID
  * @param file 업로드할 이미지 파일
+ * @param description 사진 설명 (선택)
  * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
  * @returns 업로드된 사진 정보
  * @throws {Error} 사진 업로드 실패 시 에러
@@ -385,15 +386,17 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
 export async function uploadRoomPhoto(
     roomPk: number,
     file: File,
+    description: string = "",
     cookie?: string
 ): Promise<IPhoto> {
-    const url = `${API_BASE_URL}/rooms/${roomPk}/photos/`;
+    const url = `${API_BASE_URL}/rooms/${roomPk}/photos`;
     const csrfToken = getCsrfToken(cookie);
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("description", ""); // 기본값으로 빈 문자열
+    formData.append("description", description);
 
+    // FormData를 보낼 때는 Content-Type을 설정하지 않음 (브라우저가 자동으로 boundary 포함하여 설정)
     const headers: Record<string, string> = {};
     if (csrfToken) {
         headers["X-CSRFToken"] = csrfToken;
@@ -401,6 +404,18 @@ export async function uploadRoomPhoto(
 
     if (cookie) {
         headers["Cookie"] = cookie;
+    }
+
+    if (import.meta.env.DEV) {
+        console.log("Upload photo request:", {
+            url,
+            roomPk,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            hasCsrfToken: !!csrfToken,
+            hasCookie: !!cookie,
+        });
     }
 
     const res = await fetch(url, {
@@ -414,6 +429,69 @@ export async function uploadRoomPhoto(
         const text = await res.text();
         if (import.meta.env.DEV) {
             console.error("Upload photo API error:", {
+                url,
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+                headers: Object.fromEntries(res.headers.entries()),
+            });
+        }
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
+        if (res.status === 404) {
+            throw new Error(`API endpoint not found: ${url}. Please check if the backend endpoint is configured correctly.`);
+        }
+        throw new Error(`Photo upload failed (${res.status}): ${text}`);
+    }
+
+    return res.json() as Promise<IPhoto>;
+}
+
+/**
+ * 방의 사진을 삭제합니다.
+ * @param photoPk 삭제할 사진 ID
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @throws {Error} 사진 삭제 실패 시 에러
+ */
+export async function deleteRoomPhoto(
+    photoPk: string | number,
+    cookie?: string
+): Promise<void> {
+    const url = `${API_BASE_URL}/medias/photos/${photoPk}`;
+    const csrfToken = getCsrfToken(cookie);
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    if (cookie) {
+        headers["Cookie"] = cookie;
+    }
+
+    if (import.meta.env.DEV) {
+        console.log("Delete photo request:", {
+            url,
+            photoPk,
+            hasCsrfToken: !!csrfToken,
+            hasCookie: !!cookie,
+        });
+    }
+
+    const res = await fetch(url, {
+        method: "DELETE",
+        credentials: "include",
+        headers: headers as HeadersInit,
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        if (import.meta.env.DEV) {
+            console.error("Delete photo API error:", {
+                url,
                 status: res.status,
                 statusText: res.statusText,
                 response: text,
@@ -422,9 +500,10 @@ export async function uploadRoomPhoto(
         if (res.status === 401 || res.status === 403) {
             throw new Error(`UNAUTHORIZED: ${text}`);
         }
-        throw new Error(`Photo upload failed: ${text}`);
+        if (res.status === 404) {
+            throw new Error(`Photo not found: ${url}`);
+        }
+        throw new Error(`Photo deletion failed (${res.status}): ${text}`);
     }
-
-    return res.json() as Promise<IPhoto>;
 }
 
