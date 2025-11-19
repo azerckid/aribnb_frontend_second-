@@ -1,4 +1,4 @@
-import { Form, redirect, useActionData, useNavigation } from "react-router";
+import { Form, redirect, useActionData, useNavigation, useNavigate } from "react-router";
 
 import type { Route } from "./+types/upload";
 
@@ -13,8 +13,10 @@ import {
     VStack,
     Text,
 } from "@chakra-ui/react";
+import { useEffect } from "react";
 import { FaBed, FaDollarSign, FaToilet } from "react-icons/fa";
 import type { ICategory } from "~/types";
+import { toaster } from "~/components/ui/toaster";
 import { getAmenities, getCategories, uploadRoom } from "~/utils/api";
 import { parseApiError } from "~/utils/error";
 import { uploadRoomSchema } from "~/utils/validation";
@@ -102,8 +104,11 @@ export async function action({ request }: Route.ActionArgs) {
         const cookie = request.headers.get("Cookie");
         const room = await uploadRoom(validationResult.data, cookie || undefined);
 
-        // 성공 시 방 상세 페이지로 리다이렉트
-        return redirect(`/rooms/${room.id || room.pk}`);
+        // 성공 시 방 정보와 함께 성공 상태 반환 (토스트 표시 후 리다이렉트)
+        return {
+            success: true,
+            roomId: room.id || room.pk,
+        };
     } catch (error) {
         // 개발 환경에서 원본 에러 로깅
         if (import.meta.env.DEV) {
@@ -123,8 +128,25 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
     const { user, amenities, categories } = loaderData;
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
+    const navigate = useNavigate();
     const isSubmitting = navigation.state === "submitting";
 
+    // 업로드 성공 시 토스트 표시 후 리다이렉트
+    useEffect(() => {
+        if (actionData?.success && actionData.roomId) {
+            toaster.create({
+                title: "Room uploaded successfully!",
+                description: "Your room has been uploaded and is now live.",
+                type: "success",
+                duration: 3000,
+            });
+
+            // 토스트가 표시된 후 리다이렉트
+            setTimeout(() => {
+                navigate(`/rooms/${actionData.roomId}`);
+            }, 500);
+        }
+    }, [actionData, navigate]);
 
     // categories가 paginated response인 경우 results 배열 사용
     const categoriesArray = Array.isArray(categories)
@@ -152,7 +174,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.name[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Country</Text>
                             <Input name="country" type="text" required />
@@ -160,7 +181,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.country[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">City</Text>
                             <Input name="city" type="text" required />
@@ -168,7 +188,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.city[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Address</Text>
                             <Input name="address" type="text" required />
@@ -176,7 +195,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.address[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Price</Text>
                             <Box position="relative">
@@ -197,7 +215,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.price[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Rooms</Text>
                             <Box position="relative">
@@ -218,7 +235,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.rooms[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Toilets</Text>
                             <Box position="relative">
@@ -239,7 +255,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.toilets[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Beds</Text>
                             <Box position="relative">
@@ -260,7 +275,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.beds[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Description</Text>
                             <Textarea name="description" required />
@@ -268,7 +282,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.description[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <label
                                 htmlFor="pet_friendly"
@@ -294,7 +307,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text>Pet Friendly</Text>
                             </label>
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Room Type</Text>
                             <Box
@@ -315,7 +327,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.kind[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Category</Text>
                             <Box
@@ -338,7 +349,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.category[0]}</Text>
                             )}
                         </Box>
-
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Amenities</Text>
                             <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
@@ -379,13 +389,11 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.amenities[0]}</Text>
                             )}
                         </Box>
-
                         {actionData?.error && (
                             <Box color="red.500" fontSize="sm" w="100%">
                                 {actionData.error}
                             </Box>
                         )}
-
                         <Button
                             type="submit"
                             colorPalette="red"

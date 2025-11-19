@@ -12,10 +12,11 @@ export function meta({ }: Route.MetaArgs) {
     ];
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
     try {
+        const cookie = request.headers.get("Cookie");
         const [room, reviews] = await Promise.all([
-            getRoom(params.roomPk),
+            getRoom(params.roomPk, cookie || undefined),
             getRoomReviews(params.roomPk).catch(() => []), // 리뷰가 없어도 에러가 나지 않도록
         ]);
         return { room, reviews };
@@ -48,45 +49,77 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                 <Heading>{room.name}</Heading>
             )}
 
-            <Grid
-                mt={8}
-                rounded="xl"
-                overflow="hidden"
-                gap={2}
-                height="60vh"
-                templateRows="1fr 1fr"
-                templateColumns="repeat(4, 1fr)"
-            >
-                {[0, 1, 2, 3, 4].map((index) => {
-                    const photo = displayPhotos[index];
-                    if (!photo || !photo.file) return null;
+            {displayPhotos.length > 0 && (
+                displayPhotos.length > 4 ? (
+                    <Grid
+                        mt={8}
+                        rounded="xl"
+                        overflow="hidden"
+                        gap={2}
+                        height="60vh"
+                        templateRows="1fr 1fr"
+                        templateColumns="repeat(4, 1fr)"
+                    >
+                        {[0, 1, 2, 3, 4].map((index) => {
+                            const photo = displayPhotos[index];
+                            if (!photo || !photo.file) return null;
 
-                    const isFirst = index === 0;
-                    return (
-                        <Box
-                            key={photo.pk}
-                            gridColumn={isFirst ? "span 2" : "span 1"}
-                            gridRow={isFirst ? "span 2" : "span 1"}
-                            overflow="hidden"
-                        >
-                            {isLoading ? (
-                                <Skeleton h="100%" w="100%" />
-                            ) : (
-                                <Image
-                                    objectFit="cover"
-                                    w="100%"
-                                    h="100%"
-                                    src={photo.file || undefined}
-                                    alt={photo.description || room.name}
-                                    loading="lazy"
-                                />
-                            )}
-                        </Box>
-                    );
-                })}
-            </Grid>
+                            const isFirst = index === 0;
+                            return (
+                                <Box
+                                    key={photo.pk}
+                                    gridColumn={isFirst ? "span 2" : "span 1"}
+                                    gridRow={isFirst ? "span 2" : "span 1"}
+                                    overflow="hidden"
+                                >
+                                    {isLoading ? (
+                                        <Skeleton h="100%" w="100%" />
+                                    ) : (
+                                        <Image
+                                            objectFit="cover"
+                                            w="100%"
+                                            h="100%"
+                                            src={photo.file || undefined}
+                                            alt={photo.description || room.name}
+                                            loading="lazy"
+                                        />
+                                    )}
+                                </Box>
+                            );
+                        })}
+                    </Grid>
+                ) : (
+                    <Grid
+                        mt={8}
+                        rounded="xl"
+                        overflow="hidden"
+                        gap={2}
+                        templateColumns={`repeat(${Math.min(displayPhotos.length, 4)}, 1fr)`}
+                    >
+                        {displayPhotos.map((photo) => {
+                            if (!photo || !photo.file) return null;
+                            return (
+                                <Box key={photo.pk} overflow="hidden">
+                                    {isLoading ? (
+                                        <Skeleton h="300px" w="100%" />
+                                    ) : (
+                                        <Image
+                                            objectFit="cover"
+                                            w="100%"
+                                            h="300px"
+                                            src={photo.file || undefined}
+                                            alt={photo.description || room.name}
+                                            loading="lazy"
+                                        />
+                                    )}
+                                </Box>
+                            );
+                        })}
+                    </Grid>
+                )
+            )}
 
-            <HStack width="40%" justifyContent="space-between" mt={10}>
+            <HStack w="40%" justifyContent="space-between" mt={10}>
                 <VStack alignItems="flex-start">
                     {isLoading ? (
                         <Skeleton height="30px" width="300px" />

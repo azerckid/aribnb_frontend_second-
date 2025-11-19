@@ -16,7 +16,9 @@ export function meta({ }: Route.MetaArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   try {
-    const rooms = await getRooms();
+    // 쿠키를 전달하여 인증 정보 포함
+    const cookie = request.headers.get("Cookie");
+    const rooms = await getRooms(cookie || undefined);
     return { rooms };
   } catch (error) {
     console.error("Failed to fetch rooms:", error);

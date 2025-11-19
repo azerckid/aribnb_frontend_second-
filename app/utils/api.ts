@@ -1,4 +1,4 @@
-import type { IAmenity, ICategory, IRoom, IReview, IUser } from "~/types";
+import type { IAmenity, ICategory, IPhoto, IRoom, IReview, IUser } from "~/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -113,18 +113,19 @@ export async function apiGet<T>(path: string, init?: ApiGetOptions): Promise<T> 
  * @returns 방 목록 배열
  * @throws {Error} API 호출 실패 시 에러
  */
-export async function getRooms(): Promise<IRoom[]> {
-    return apiGet<IRoom[]>("/rooms/");
+export async function getRooms(cookie?: string): Promise<IRoom[]> {
+    return apiGet<IRoom[]>("/rooms/", cookie ? { cookie } : undefined);
 }
 
 /**
  * 특정 방의 상세 정보를 가져옵니다.
  * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
  * @returns 방 상세 정보 객체
  * @throws {Error} API 호출 실패 시 에러
  */
-export async function getRoom(roomPk: number | string): Promise<IRoom> {
-    return apiGet<IRoom>(`/rooms/${roomPk}`);
+export async function getRoom(roomPk: number | string, cookie?: string): Promise<IRoom> {
+    return apiGet<IRoom>(`/rooms/${roomPk}`, cookie ? { cookie } : undefined);
 }
 
 /**
@@ -371,5 +372,59 @@ export async function getAmenities(cookie?: string): Promise<IAmenity[]> {
  */
 export async function getCategories(cookie?: string): Promise<ICategory[]> {
     return apiGet<ICategory[]>("/categories", cookie ? { cookie } : undefined);
+}
+
+/**
+ * 방에 사진을 업로드합니다.
+ * @param roomPk 방 ID
+ * @param file 업로드할 이미지 파일
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 업로드된 사진 정보
+ * @throws {Error} 사진 업로드 실패 시 에러
+ */
+export async function uploadRoomPhoto(
+    roomPk: number,
+    file: File,
+    cookie?: string
+): Promise<IPhoto> {
+    const url = `${API_BASE_URL}/rooms/${roomPk}/photos/`;
+    const csrfToken = getCsrfToken(cookie);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("description", ""); // 기본값으로 빈 문자열
+
+    const headers: Record<string, string> = {};
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    if (cookie) {
+        headers["Cookie"] = cookie;
+    }
+
+    const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: headers as HeadersInit,
+        body: formData,
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        if (import.meta.env.DEV) {
+            console.error("Upload photo API error:", {
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+            });
+        }
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
+        throw new Error(`Photo upload failed: ${text}`);
+    }
+
+    return res.json() as Promise<IPhoto>;
 }
 

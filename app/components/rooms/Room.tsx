@@ -1,8 +1,8 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import type { IRoom } from "~/types";
 
-import { FaRegHeart, FaStar } from "react-icons/fa";
+import { FaCamera, FaRegHeart, FaStar } from "react-icons/fa";
 import {
   Box,
   Button,
@@ -14,9 +14,16 @@ import {
 } from "@chakra-ui/react";
 
 export default function Room(room: IRoom) {
-  const { id, name, rating, city, country, price, photos } = room;
+  const { id, name, rating, city, country, price, photos, is_owner } = room;
   const imageUrl = photos[0]?.file || "";
   const roomId = id || room.pk || 0;
+  const navigate = useNavigate();
+
+  const handleCameraClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/rooms/${roomId}/photos`);
+  };
 
   return (
     <Link to={`/rooms/${roomId}`}>
@@ -30,15 +37,24 @@ export default function Room(room: IRoom) {
             loading="lazy"
           />
           <Button
-            aria-label="Add to wishlist"
+            aria-label={is_owner ? "Upload photos" : "Add to wishlist"}
             variant={"ghost"}
             position="absolute"
             top={0}
             right={0}
+            zIndex={10}
             color="white"
-            _hover={{ bg: "transparent" }}
+            bg="transparent"
+            _hover={{ bg: "rgba(0, 0, 0, 0.1)" }}
+            onClick={(e) => {
+              if (is_owner) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCameraClick(e);
+              }
+            }}
           >
-            <FaRegHeart size="20px" />
+            {is_owner ? <FaCamera size="20px" /> : <FaRegHeart size="20px" />}
           </Button>
         </Box>
         <Box>
