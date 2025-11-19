@@ -73,6 +73,11 @@ export const uploadRoomSchema = z.object({
         .min(1, "화장실 개수를 입력해주세요")
         .transform((val) => Number(val))
         .refine((val) => !isNaN(val) && val >= 0, "화장실 개수는 0 이상의 숫자여야 합니다"),
+    beds: z
+        .string()
+        .min(1, "침대 개수를 입력해주세요")
+        .transform((val) => Number(val))
+        .refine((val) => !isNaN(val) && val >= 0, "침대 개수는 0 이상의 숫자여야 합니다"),
     description: z
         .string()
         .min(1, "설명을 입력해주세요")

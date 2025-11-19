@@ -13,12 +13,11 @@ import {
     VStack,
     Text,
 } from "@chakra-ui/react";
-import { FaBed, FaMoneyBill, FaToilet } from "react-icons/fa";
-import { parseApiError } from "~/utils/error";
-import { requireHost } from "~/utils/auth";
+import { FaBed, FaDollarSign, FaMoneyBill, FaToilet } from "react-icons/fa";
 import { uploadRoom } from "~/utils/api";
+import { parseApiError } from "~/utils/error";
 import { uploadRoomSchema } from "~/utils/validation";
-
+import { requireHost } from "~/utils/auth";
 
 export async function loader({ request }: Route.LoaderArgs) {
     // 호스트 권한 체크 (로그인 체크 포함)
@@ -55,7 +54,7 @@ export async function action({ request }: Route.ActionArgs) {
         // 성공 시 방 상세 페이지로 리다이렉트
         return redirect(`/rooms/${room.id || room.pk}`);
     } catch (error) {
-        const errorMessage = parseApiError(error, "방 업로드에 실패했습니다. 다시 시도해주세요.");
+        const errorMessage = parseApiError(error, "Failed to upload room. Please try again.");
         return {
             error: errorMessage,
         };
@@ -72,21 +71,21 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
         <Box pb={40} mt={10} px={{ base: 10, lg: 40 }}>
             <Container maxW="container.lg">
                 <Heading textAlign="center" size="xl" mb={8}>
-                    방 업로드
+                    Upload Room
                 </Heading>
                 <Form method="post">
                     <VStack gap={5} mt={5}>
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">방 이름</Text>
+                            <Text mb={2} fontWeight="medium">Room Name</Text>
                             <Input name="name" type="text" required />
-                            <Text fontSize="sm" color="gray.500" mt={1}>방 이름을 입력해주세요.</Text>
+                            <Text fontSize="sm" color="gray.500" mt={1}>Please enter the room name.</Text>
                             {actionData?.fieldErrors?.name && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.name[0]}</Text>
                             )}
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">국가</Text>
+                            <Text mb={2} fontWeight="medium">Country</Text>
                             <Input name="country" type="text" required />
                             {actionData?.fieldErrors?.country && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.country[0]}</Text>
@@ -94,7 +93,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">도시</Text>
+                            <Text mb={2} fontWeight="medium">City</Text>
                             <Input name="city" type="text" required />
                             {actionData?.fieldErrors?.city && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.city[0]}</Text>
@@ -102,7 +101,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">주소</Text>
+                            <Text mb={2} fontWeight="medium">Address</Text>
                             <Input name="address" type="text" required />
                             {actionData?.fieldErrors?.address && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.address[0]}</Text>
@@ -110,7 +109,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">가격</Text>
+                            <Text mb={2} fontWeight="medium">Price</Text>
                             <Box position="relative">
                                 <Input name="price" type="number" min={0} pl="10" required />
                                 <Box
@@ -122,7 +121,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                     color="gray.400"
                                     pointerEvents="none"
                                 >
-                                    <FaMoneyBill size={18} />
+                                    <FaDollarSign size={14} />
                                 </Box>
                             </Box>
                             {actionData?.fieldErrors?.price && (
@@ -131,7 +130,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">방 개수</Text>
+                            <Text mb={2} fontWeight="medium">Rooms</Text>
                             <Box position="relative">
                                 <Input name="rooms" type="number" min={0} pl="10" required />
                                 <Box
@@ -152,7 +151,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">화장실 개수</Text>
+                            <Text mb={2} fontWeight="medium">Toilets</Text>
                             <Box position="relative">
                                 <Input name="toilets" type="number" min={0} pl="10" required />
                                 <Box
@@ -173,7 +172,28 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">설명</Text>
+                            <Text mb={2} fontWeight="medium">Beds</Text>
+                            <Box position="relative">
+                                <Input name="beds" type="number" min={0} pl="10" required />
+                                <Box
+                                    position="absolute"
+                                    insetY="0"
+                                    left="3"
+                                    display="flex"
+                                    alignItems="center"
+                                    color="gray.400"
+                                    pointerEvents="none"
+                                >
+                                    <FaBed size={18} />
+                                </Box>
+                            </Box>
+                            {actionData?.fieldErrors?.beds && (
+                                <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.beds[0]}</Text>
+                            )}
+                        </Box>
+
+                        <Box w="100%">
+                            <Text mb={2} fontWeight="medium">Description</Text>
                             <Textarea name="description" required />
                             {actionData?.fieldErrors?.description && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.description[0]}</Text>
@@ -181,14 +201,33 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
 
                         <Box w="100%">
-                            <Checkbox.Root name="pet_friendly" value="on">
-                                <Checkbox.Control />
-                                <Checkbox.Label>반려동물 허용</Checkbox.Label>
-                            </Checkbox.Root>
+                            <label
+                                htmlFor="pet_friendly"
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    cursor: "pointer",
+                                    userSelect: "none",
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    name="pet_friendly"
+                                    value="on"
+                                    id="pet_friendly"
+                                    style={{
+                                        width: "18px",
+                                        height: "18px",
+                                        cursor: "pointer",
+                                    }}
+                                />
+                                <Text>Pet Friendly</Text>
+                            </label>
                         </Box>
 
                         <Box w="100%">
-                            <Text mb={2} fontWeight="medium">방 종류</Text>
+                            <Text mb={2} fontWeight="medium">Room Type</Text>
                             <Box
                                 as="select"
                                 {...({ name: "kind", required: true } as any)}
@@ -197,12 +236,12 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 borderWidth="1px"
                                 borderRadius="md"
                             >
-                                <option value="">방 종류를 선택해주세요</option>
-                                <option value="entire_place">전체 공간</option>
-                                <option value="private_room">개인실</option>
-                                <option value="shared_room">공유실</option>
+                                <option value="">Please select a room type</option>
+                                <option value="entire_place">Entire Place</option>
+                                <option value="private_room">Private Room</option>
+                                <option value="shared_room">Shared Room</option>
                             </Box>
-                            <Text fontSize="sm" color="gray.500" mt={1}>어떤 종류의 방을 제공하시나요?</Text>
+                            <Text fontSize="sm" color="gray.500" mt={1}>What type of room are you offering?</Text>
                             {actionData?.fieldErrors?.kind && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.kind[0]}</Text>
                             )}
@@ -221,7 +260,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                             loading={isSubmitting}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? "업로드 중..." : "방 업로드"}
+                            {isSubmitting ? "Uploading..." : "Upload Room"}
                         </Button>
                     </VStack>
                 </Form>

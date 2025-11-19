@@ -272,6 +272,7 @@ export async function oauthCallback(provider: "github" | "kakao", code: string):
  * @param data.price 가격 (숫자)
  * @param data.rooms 방 개수
  * @param data.toilets 화장실 개수
+ * @param data.beds 침대 개수
  * @param data.description 방 설명
  * @param data.pet_friendly 반려동물 허용 여부
  * @param data.kind 방 종류 ("entire_place" | "private_room" | "shared_room")
@@ -286,6 +287,7 @@ export async function uploadRoom(data: {
     price: number;
     rooms: number;
     toilets: number;
+    beds: number;
     description: string;
     pet_friendly: boolean;
     kind: string;
