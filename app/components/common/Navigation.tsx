@@ -75,6 +75,14 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                             </HStack>
                                         </Box>
                                         <Separator />
+                                        {user?.is_host && (
+                                            <Menu.Item value="upload" asChild>
+                                                <RouterLink to="/rooms/upload">
+                                                    방 업로드
+                                                </RouterLink>
+                                            </Menu.Item>
+                                        )}
+                                        <Separator />
                                         <Menu.Item value="logout" onClick={onLogoutSuccess}>
                                             Log out
                                         </Menu.Item>

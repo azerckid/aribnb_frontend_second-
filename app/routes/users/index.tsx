@@ -1,5 +1,6 @@
 import type { Route } from "./+types/index";
 import { Stack, Text } from "@chakra-ui/react";
+import { requireAuth } from "~/utils/auth";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -8,12 +9,21 @@ export function meta({ }: Route.MetaArgs) {
   ];
 }
 
-export default function Users() {
-  return (
-    <Stack p={4}>
-      <Text>Users</Text>
-    </Stack>
-  );
+export async function loader({ request }: Route.LoaderArgs) {
+    // 인증이 필요한 페이지 예시
+    const user = await requireAuth(request);
+    return { user };
+}
+
+export default function Users({ loaderData }: Route.ComponentProps) {
+    const { user } = loaderData;
+    
+    return (
+        <Stack p={4}>
+            <Text>Users</Text>
+            <Text>안녕하세요, {user.name}님!</Text>
+        </Stack>
+    );
 }
 
 
