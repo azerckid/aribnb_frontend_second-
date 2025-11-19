@@ -3,28 +3,41 @@ import type { IAmenity, ICategory, IRoom, IReview, IUser } from "~/types";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 /**
- * 브라우저 쿠키에서 CSRF 토큰을 가져옵니다.
- * 서버 사이드 렌더링 환경에서는 document가 없으므로 null을 반환합니다.
- * @returns CSRF 토큰 문자열 또는 null (토큰이 없는 경우)
+ * 쿠키 문자열에서 특정 쿠키 값을 추출합니다.
+ * @param cookieString 쿠키 문자열 (예: "csrftoken=abc123; sessionid=xyz")
+ * @param name 쿠키 이름
+ * @returns 쿠키 값 또는 null
  */
-export function getCsrfToken(): string | null {
-    // 서버 사이드 렌더링에서는 document가 없음
-    if (typeof document === "undefined") {
-        return null;
-    }
-    const name = "csrftoken";
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(";");
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === name + "=") {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+function getCookieFromString(cookieString: string | null, name: string): string | null {
+    if (!cookieString) return null;
+    const cookies = cookieString.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+            return decodeURIComponent(cookie.substring(name.length + 1));
         }
     }
-    return cookieValue;
+    return null;
+}
+
+/**
+ * 브라우저 쿠키에서 CSRF 토큰을 가져옵니다.
+ * 서버 사이드 렌더링 환경에서는 document가 없으므로 null을 반환합니다.
+ * @param cookieString 서버 사이드에서 사용할 쿠키 문자열 (선택)
+ * @returns CSRF 토큰 문자열 또는 null (토큰이 없는 경우)
+ */
+export function getCsrfToken(cookieString?: string | null): string | null {
+    // 서버 사이드에서 쿠키 문자열이 제공된 경우
+    if (cookieString) {
+        return getCookieFromString(cookieString, "csrftoken");
+    }
+
+    // 브라우저 환경에서 document.cookie 사용
+    if (typeof document !== "undefined") {
+        return getCookieFromString(document.cookie, "csrftoken");
+    }
+
+    return null;
 }
 
 interface ApiGetOptions extends RequestInit {
@@ -278,29 +291,39 @@ export async function oauthCallback(provider: "github" | "kakao", code: string):
  * @param data.kind 방 종류 ("entire_place" | "private_room" | "shared_room")
  * @param data.category 카테고리 ID
  * @param data.amenities 편의시설 ID 배열
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
  * @returns 생성된 방 정보 객체
  * @throws {Error} 방 업로드 실패 시 에러
  */
-export async function uploadRoom(data: {
-    name: string;
-    country: string;
-    city: string;
-    address: string;
-    price: number;
-    rooms: number;
-    toilets: number;
-    beds: number;
-    description: string;
-    pet_friendly: boolean;
-    kind: string;
-    category: number;
-    amenities: number[];
-}): Promise<IRoom> {
+export async function uploadRoom(
+    data: {
+        name: string;
+        country: string;
+        city: string;
+        address: string;
+        price: number;
+        rooms: number;
+        toilets: number;
+        beds: number;
+        description: string;
+        pet_friendly: boolean;
+        kind: string;
+        category: number;
+        amenities: number[];
+    },
+    cookie?: string
+): Promise<IRoom> {
     const url = `${API_BASE_URL}/rooms/`;
-    const csrfToken = getCsrfToken();
+    // 서버 사이드에서는 쿠키 문자열에서 CSRF 토큰 추출
+    const csrfToken = getCsrfToken(cookie);
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (csrfToken) {
         headers["X-CSRFToken"] = csrfToken;
+    }
+
+    // 서버 사이드 렌더링에서 쿠키를 전달하기 위해 Cookie 헤더 추가
+    if (cookie) {
+        headers["Cookie"] = cookie;
     }
 
     const res = await fetch(url, {
@@ -312,6 +335,18 @@ export async function uploadRoom(data: {
 
     if (!res.ok) {
         const text = await res.text();
+        // 개발 환경에서 상세 에러 로깅
+        if (import.meta.env.DEV) {
+            console.error("Upload room API error:", {
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+            });
+        }
+        // 401/403은 인증/권한 에러이므로 특별 처리
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
         throw new Error(`Room upload failed: ${text}`);
     }
 

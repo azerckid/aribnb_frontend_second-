@@ -45,7 +45,17 @@ export async function loader({ request }: Route.LoaderArgs) {
         ]);
 
         if (import.meta.env.DEV) {
-            console.log("Loader data:", { amenitiesCount: amenities.length, categoriesCount: categories.length });
+            const categoriesArray = Array.isArray(categories)
+                ? categories
+                : categories && typeof categories === "object" && "results" in categories
+                    ? (categories as { results: ICategory[] }).results
+                    : [];
+            console.log("Loader data:", {
+                amenitiesCount: amenities.length,
+                categoriesCount: categoriesArray.length,
+                categoriesType: Array.isArray(categories) ? "array" : typeof categories,
+                categoriesKeys: categories && typeof categories === "object" ? Object.keys(categories) : [],
+            });
         }
 
         return { user, amenities, categories };
@@ -88,11 +98,20 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     try {
-        const room = await uploadRoom(validationResult.data);
+        // request에서 쿠키를 가져와서 API 호출에 전달
+        const cookie = request.headers.get("Cookie");
+        const room = await uploadRoom(validationResult.data, cookie || undefined);
 
         // 성공 시 방 상세 페이지로 리다이렉트
         return redirect(`/rooms/${room.id || room.pk}`);
     } catch (error) {
+        // 개발 환경에서 원본 에러 로깅
+        if (import.meta.env.DEV) {
+            console.error("Room upload error:", error);
+            if (error instanceof Error) {
+                console.error("Error message:", error.message);
+            }
+        }
         const errorMessage = parseApiError(error, "Failed to upload room. Please try again.");
         return {
             error: errorMessage,
@@ -106,11 +125,6 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
     const navigation = useNavigation();
     const isSubmitting = navigation.state === "submitting";
 
-    // 디버깅: 개발 환경에서만 로그 출력
-    if (import.meta.env.DEV) {
-        console.log("UploadRoom component - categories:", JSON.stringify(categories, null, 2));
-        console.log("UploadRoom component - amenities:", JSON.stringify(amenities, null, 2));
-    }
 
     // categories가 paginated response인 경우 results 배열 사용
     const categoriesArray = Array.isArray(categories)
@@ -313,8 +327,8 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                                 borderRadius="md"
                             >
                                 <option value="">Please select a category</option>
-                                {categoriesArray.map((category, index) => (
-                                    <option key={category.pk || index} value={category.pk || category.name}>
+                                {categoriesArray.map((category) => (
+                                    <option key={category.pk} value={category.pk}>
                                         {category.name}
                                     </option>
                                 ))}
