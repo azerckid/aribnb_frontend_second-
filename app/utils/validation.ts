@@ -90,6 +90,22 @@ export const uploadRoomSchema = z.object({
         .enum(["entire_place", "private_room", "shared_room"], {
             message: "방 종류를 선택해주세요",
         }),
+    category: z
+        .string()
+        .min(1, "카테고리를 선택해주세요")
+        .transform((val) => Number(val))
+        .refine((val) => !isNaN(val) && val > 0, "올바른 카테고리를 선택해주세요"),
+    amenities: z
+        .string()
+        .or(z.array(z.string()))
+        .optional()
+        .transform((val) => {
+            if (!val) return [];
+            if (Array.isArray(val)) {
+                return val.map((v) => Number(v)).filter((v) => !isNaN(v));
+            }
+            return [Number(val)].filter((v) => !isNaN(v));
+        }),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

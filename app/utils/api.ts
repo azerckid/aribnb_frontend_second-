@@ -1,4 +1,4 @@
-import type { IRoom, IReview, IUser } from "~/types";
+import type { IAmenity, ICategory, IRoom, IReview, IUser } from "~/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -276,6 +276,8 @@ export async function oauthCallback(provider: "github" | "kakao", code: string):
  * @param data.description 방 설명
  * @param data.pet_friendly 반려동물 허용 여부
  * @param data.kind 방 종류 ("entire_place" | "private_room" | "shared_room")
+ * @param data.category 카테고리 ID
+ * @param data.amenities 편의시설 ID 배열
  * @returns 생성된 방 정보 객체
  * @throws {Error} 방 업로드 실패 시 에러
  */
@@ -291,6 +293,8 @@ export async function uploadRoom(data: {
     description: string;
     pet_friendly: boolean;
     kind: string;
+    category: number;
+    amenities: number[];
 }): Promise<IRoom> {
     const url = `${API_BASE_URL}/rooms/`;
     const csrfToken = getCsrfToken();
@@ -312,5 +316,25 @@ export async function uploadRoom(data: {
     }
 
     return res.json() as Promise<IRoom>;
+}
+
+/**
+ * 모든 편의시설 목록을 가져옵니다.
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 편의시설 목록 배열
+ * @throws {Error} API 호출 실패 시 에러
+ */
+export async function getAmenities(cookie?: string): Promise<IAmenity[]> {
+    return apiGet<IAmenity[]>("/rooms/amenities", cookie ? { cookie } : undefined);
+}
+
+/**
+ * 모든 카테고리 목록을 가져옵니다.
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 카테고리 목록 배열
+ * @throws {Error} API 호출 실패 시 에러
+ */
+export async function getCategories(cookie?: string): Promise<ICategory[]> {
+    return apiGet<ICategory[]>("/categories", cookie ? { cookie } : undefined);
 }
 

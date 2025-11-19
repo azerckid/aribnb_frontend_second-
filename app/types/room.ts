@@ -11,11 +11,13 @@ export interface IOwner {
 }
 
 export interface IAmenity {
+    pk: number;
     name: string;
     description: string;
 }
 
 export interface ICategory {
+    pk: number;
     name: string;
     kind: string;
 }
@@ -42,7 +44,7 @@ export interface IRoom {
     owner: IOwner;
     amenities: IAmenity[];
     category: ICategory;
-    beds: unknown[];
+    beds: number;
     rooms: number;
     toilets: number;
     description: string;

@@ -5,16 +5,17 @@ import type { Route } from "./+types/upload";
 import {
     Box,
     Button,
-    Checkbox,
     Container,
     Heading,
     Input,
+    SimpleGrid,
     Textarea,
     VStack,
     Text,
 } from "@chakra-ui/react";
-import { FaBed, FaDollarSign, FaMoneyBill, FaToilet } from "react-icons/fa";
-import { uploadRoom } from "~/utils/api";
+import { FaBed, FaDollarSign, FaToilet } from "react-icons/fa";
+import type { ICategory } from "~/types";
+import { getAmenities, getCategories, uploadRoom } from "~/utils/api";
 import { parseApiError } from "~/utils/error";
 import { uploadRoomSchema } from "~/utils/validation";
 import { requireHost } from "~/utils/auth";
@@ -22,7 +23,39 @@ import { requireHost } from "~/utils/auth";
 export async function loader({ request }: Route.LoaderArgs) {
     // 호스트 권한 체크 (로그인 체크 포함)
     const user = await requireHost(request);
-    return { user };
+
+    // request에서 쿠키를 가져와서 API 호출에 전달
+    const cookie = request.headers.get("Cookie");
+
+    // 편의시설과 카테고리 데이터를 병렬로 가져오기
+    try {
+        const [amenities, categories] = await Promise.all([
+            getAmenities(cookie || undefined).catch((error) => {
+                if (import.meta.env.DEV) {
+                    console.error("Failed to fetch amenities:", error);
+                }
+                return [];
+            }),
+            getCategories(cookie || undefined).catch((error) => {
+                if (import.meta.env.DEV) {
+                    console.error("Failed to fetch categories:", error);
+                }
+                return [];
+            }),
+        ]);
+
+        if (import.meta.env.DEV) {
+            console.log("Loader data:", { amenitiesCount: amenities.length, categoriesCount: categories.length });
+        }
+
+        return { user, amenities, categories };
+    } catch (error) {
+        // 에러가 발생해도 빈 배열로 처리하여 페이지는 표시
+        if (import.meta.env.DEV) {
+            console.error("Loader error:", error);
+        }
+        return { user, amenities: [], categories: [] };
+    }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -30,12 +63,18 @@ export async function action({ request }: Route.ActionArgs) {
     const user = await requireHost(request);
 
     const formData = await request.formData();
-    const data = Object.fromEntries(formData);
+    const data: Record<string, FormDataEntryValue | FormDataEntryValue[]> = Object.fromEntries(formData);
 
     // pet_friendly는 checkbox이므로 체크되지 않으면 FormData에 없음
     // 체크되지 않은 경우 false로 설정
     if (!data.pet_friendly) {
         data.pet_friendly = "off";
+    }
+
+    // amenities는 여러 개 선택될 수 있으므로 배열로 처리
+    const amenities = formData.getAll("amenities");
+    if (amenities.length > 0) {
+        data.amenities = amenities;
     }
 
     // zod validation
@@ -62,10 +101,26 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function UploadRoom({ loaderData }: Route.ComponentProps) {
-    const { user } = loaderData;
+    const { user, amenities, categories } = loaderData;
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const isSubmitting = navigation.state === "submitting";
+
+    // 디버깅: 개발 환경에서만 로그 출력
+    if (import.meta.env.DEV) {
+        console.log("UploadRoom component - categories:", JSON.stringify(categories, null, 2));
+        console.log("UploadRoom component - amenities:", JSON.stringify(amenities, null, 2));
+    }
+
+    // categories가 paginated response인 경우 results 배열 사용
+    const categoriesArray = Array.isArray(categories)
+        ? categories
+        : categories && typeof categories === "object" && "results" in categories
+            ? ((categories as { results: ICategory[] }).results)
+            : [];
+
+    // amenities가 배열인지 확인하고, 아니면 빈 배열로 처리
+    const amenitiesArray = Array.isArray(amenities) ? amenities : [];
 
     return (
         <Box pb={40} mt={10} px={{ base: 10, lg: 40 }}>
@@ -244,6 +299,70 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                             <Text fontSize="sm" color="gray.500" mt={1}>What type of room are you offering?</Text>
                             {actionData?.fieldErrors?.kind && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.kind[0]}</Text>
+                            )}
+                        </Box>
+
+                        <Box w="100%">
+                            <Text mb={2} fontWeight="medium">Category</Text>
+                            <Box
+                                as="select"
+                                {...({ name: "category", required: true } as any)}
+                                w="100%"
+                                p={2}
+                                borderWidth="1px"
+                                borderRadius="md"
+                            >
+                                <option value="">Please select a category</option>
+                                {categoriesArray.map((category, index) => (
+                                    <option key={category.pk || index} value={category.pk || category.name}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </Box>
+                            <Text fontSize="sm" color="gray.500" mt={1}>What category describes your room?</Text>
+                            {actionData?.fieldErrors?.category && (
+                                <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.category[0]}</Text>
+                            )}
+                        </Box>
+
+                        <Box w="100%">
+                            <Text mb={2} fontWeight="medium">Amenities</Text>
+                            <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
+                                {amenitiesArray.map((amenity) => (
+                                    <Box key={amenity.pk}>
+                                        <label
+                                            htmlFor={`amenity-${amenity.pk}`}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                                cursor: "pointer",
+                                                userSelect: "none",
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                name="amenities"
+                                                value={amenity.pk}
+                                                id={`amenity-${amenity.pk}`}
+                                                style={{
+                                                    width: "18px",
+                                                    height: "18px",
+                                                    cursor: "pointer",
+                                                }}
+                                            />
+                                            <Text fontWeight="medium">{amenity.name}</Text>
+                                        </label>
+                                        {amenity.description && (
+                                            <Text fontSize="sm" color="gray.500" mt={1} ml={6}>
+                                                {amenity.description}
+                                            </Text>
+                                        )}
+                                    </Box>
+                                ))}
+                            </SimpleGrid>
+                            {actionData?.fieldErrors?.amenities && (
+                                <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.amenities[0]}</Text>
                             )}
                         </Box>
 
