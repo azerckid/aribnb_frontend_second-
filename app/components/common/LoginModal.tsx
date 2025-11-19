@@ -18,6 +18,7 @@ import { SocialLogin } from "./SocialLogin";
 import { login } from "~/utils/api";
 import { toaster } from "~/components/ui/toaster";
 import { loginSchema } from "~/utils/validation";
+import { parseApiError } from "~/utils/error";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -50,14 +51,14 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
         try {
             await login(username, password);
-            
+
             // 폼 초기화
             setUsername("");
             setPassword("");
-            
+
             // 모달 먼저 닫기
             onClose();
-            
+
             // 모달이 완전히 닫힌 후 토스트 생성 (모달의 DOM 변경이 토스트에 영향을 주지 않도록)
             setTimeout(() => {
                 toaster.create({
@@ -65,48 +66,14 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                     type: "success",
                     duration: 5000,
                 });
-                
+
                 // 충분한 지연 후 revalidate (토스트가 보이도록, 쿠키가 설정될 시간도 확보)
                 setTimeout(() => {
                     onLoginSuccess?.();
                 }, 500);
             }, 200);
         } catch (error) {
-            let errorMessage = "알 수 없는 오류가 발생했습니다.";
-
-            if (error instanceof Error) {
-                // 서버 에러 메시지 파싱
-                try {
-                    const errorText = error.message;
-                    if (errorText.includes("Invalid credentials") || errorText.includes("자격 인증")) {
-                        errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다.";
-                    } else if (errorText.includes("401") || errorText.includes("Unauthorized")) {
-                        errorMessage = "인증에 실패했습니다. 아이디와 비밀번호를 확인해주세요.";
-                    } else if (errorText.includes("403") || errorText.includes("Forbidden")) {
-                        errorMessage = "접근 권한이 없습니다.";
-                    } else if (errorText.includes("404") || errorText.includes("Not Found")) {
-                        errorMessage = "요청한 페이지를 찾을 수 없습니다.";
-                    } else if (errorText.includes("500") || errorText.includes("Internal Server")) {
-                        errorMessage = "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-                    } else if (errorText.includes("Network") || errorText.includes("Failed to fetch")) {
-                        errorMessage = "네트워크 연결을 확인해주세요.";
-                    } else {
-                        // JSON 파싱 시도
-                        const jsonMatch = errorText.match(/\{.*\}/);
-                        if (jsonMatch) {
-                            const errorJson = JSON.parse(jsonMatch[0]);
-                            if (errorJson.error === "Invalid credentials.") {
-                                errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다.";
-                            } else if (errorJson.detail) {
-                                errorMessage = errorJson.detail;
-                            }
-                        }
-                    }
-                } catch {
-                    // 파싱 실패 시 기본 메시지 사용
-                    errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
-                }
-            }
+            const errorMessage = parseApiError(error, "로그인에 실패했습니다. 다시 시도해주세요.");
 
             toaster.create({
                 title: "로그인 실패",

@@ -19,6 +19,7 @@ import { SocialLogin } from "./SocialLogin";
 import { signUp, login } from "~/utils/api";
 import { toaster } from "~/components/ui/toaster";
 import { signUpSchema } from "~/utils/validation";
+import { parseApiError } from "~/utils/error";
 
 interface SignUpModalProps {
     isOpen: boolean;
@@ -88,9 +89,11 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
                 }, 500);
             }, 200);
         } catch (error) {
+            const errorMessage = parseApiError(error, "회원가입에 실패했습니다. 다시 시도해주세요.");
+
             toaster.create({
                 title: "회원가입 실패",
-                description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+                description: errorMessage,
                 type: "error",
                 duration: 3000,
             });
