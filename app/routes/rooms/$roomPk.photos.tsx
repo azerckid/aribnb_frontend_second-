@@ -1,5 +1,5 @@
 import { Form, redirect, useActionData, useNavigation } from "react-router";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 import type { Route } from "./+types/$roomPk.photos";
 
@@ -21,7 +21,7 @@ import { parseApiError } from "~/utils/error";
 import { requireHost } from "~/utils/auth";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-    const user = await requireHost(request);
+    await requireHost(request);
     const roomPk = params.roomPk;
 
     if (!roomPk) {
@@ -32,12 +32,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         const cookie = request.headers.get("Cookie");
         const room = await getRoom(roomPk, cookie || undefined);
 
-        // 방 소유자 확인
         if (!room.is_owner) {
             throw new Response("You are not the owner of this room", { status: 403 });
         }
 
-        return { user, room };
+        return { room };
     } catch (error) {
         if (error instanceof Response) {
             throw error;
@@ -47,7 +46,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-    const user = await requireHost(request);
+    await requireHost(request);
     const roomPk = params.roomPk;
 
     if (!roomPk) {
@@ -57,30 +56,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     const formData = await request.formData();
-
-    // 디버깅: FormData 내용 확인
-    if (import.meta.env.DEV) {
-        console.log("Action - FormData entries:", Array.from(formData.entries()).map(([key, value]) => {
-            if (value instanceof File) {
-                return [key, { valueType: "File", name: value.name, size: value.size, mimeType: value.type }];
-            }
-            return [key, value];
-        }));
-    }
-
     const file = formData.get("file") as File | null;
     const description = (formData.get("description") as string) || "";
-
-    // 디버깅: 파일 정보 확인
-    if (import.meta.env.DEV) {
-        console.log("Action - file:", file ? {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-        } : null);
-        console.log("Action - description:", description);
-    }
 
     if (!file) {
         return {
@@ -112,7 +89,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
-    const { user, room } = loaderData;
+    const { room } = loaderData;
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const isSubmitting = navigation.state === "submitting";
@@ -120,22 +97,6 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const [description, setDescription] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // 업로드 성공 후 폼 리셋 (redirect 전에 실행됨)
-    useEffect(() => {
-        // navigation.state가 "idle"로 돌아오면 업로드가 완료된 것
-        // actionData가 없고 navigation이 idle이면 성공적으로 리다이렉트된 것
-        if (navigation.state === "idle" && !actionData?.error) {
-            // 상태 리셋
-            setSelectedFile(null);
-            setPreview(null);
-            setDescription("");
-            // 파일 input 리셋
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
-        }
-    }, [navigation.state, actionData]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -206,8 +167,9 @@ export default function UploadPhotos({ loaderData }: Route.ComponentProps) {
                                                 onClick={() => {
                                                     setSelectedFile(null);
                                                     setPreview(null);
-                                                    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-                                                    if (input) input.value = "";
+                                                    if (fileInputRef.current) {
+                                                        fileInputRef.current.value = "";
+                                                    }
                                                 }}
                                             >
                                                 Change Photo

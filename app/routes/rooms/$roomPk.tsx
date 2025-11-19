@@ -86,38 +86,31 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
     const [deletePhotoPk, setDeletePhotoPk] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // 업로드/삭제 성공 시 데이터 재로드 및 토스트 표시
     useEffect(() => {
-        if (actionData?.success && navigation.state === "idle") {
-            // 토스트 메시지 표시
-            if (actionData.action === "upload") {
-                toaster.create({
-                    title: "Photo uploaded successfully!",
-                    description: "Your photo has been uploaded and is now visible.",
-                    type: "success",
-                    duration: 3000,
-                });
-            } else if (actionData.action === "delete") {
-                toaster.create({
-                    title: "Photo deleted successfully!",
-                    description: "The photo has been removed from your room.",
-                    type: "success",
-                    duration: 3000,
-                });
-            }
+        if (!actionData?.success || navigation.state !== "idle") return;
 
-            // 데이터 재로드
-            revalidator.revalidate();
-
-            // 업로드 폼 리셋
-            if (actionData.action === "upload") {
-                setShowUploadForm(false);
-                setSelectedFile(null);
-                setPreview(null);
-                setDescription("");
-            }
+        if (actionData.action === "upload") {
+            toaster.create({
+                title: "Photo uploaded successfully!",
+                description: "Your photo has been uploaded and is now visible.",
+                type: "success",
+                duration: 3000,
+            });
+            setShowUploadForm(false);
+            setSelectedFile(null);
+            setPreview(null);
+            setDescription("");
+        } else if (actionData.action === "delete") {
+            toaster.create({
+                title: "Photo deleted successfully!",
+                description: "The photo has been removed from your room.",
+                type: "success",
+                duration: 3000,
+            });
         }
-    }, [actionData?.success, actionData?.action, navigation.state, revalidator]);
+
+        revalidator.revalidate();
+    }, [actionData?.success, actionData?.action, navigation.state]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -132,48 +125,36 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
     };
 
     const handleDeleteClick = (photoPk: string) => {
-        if (import.meta.env.DEV) {
-            console.log("Delete button clicked, photoPk:", photoPk);
-        }
         setDeletePhotoPk(photoPk);
         setShowDeleteModal(true);
-        if (import.meta.env.DEV) {
-            console.log("showDeleteModal set to true");
-        }
     };
 
     const handleDeleteConfirm = () => {
-        if (deletePhotoPk) {
-            setShowDeleteModal(false);
-            // Form을 통해 삭제 요청 전송
-            const form = document.getElementById("delete-photo-form") as HTMLFormElement;
-            if (form) {
-                const photoPkInput = form.querySelector('input[name="photoPk"]') as HTMLInputElement;
-                if (photoPkInput) {
-                    photoPkInput.value = deletePhotoPk;
-                    form.submit();
-                }
+        if (!deletePhotoPk) return;
+        setShowDeleteModal(false);
+        const form = document.getElementById("delete-photo-form") as HTMLFormElement;
+        if (form) {
+            const photoPkInput = form.querySelector('input[name="photoPk"]') as HTMLInputElement;
+            if (photoPkInput) {
+                photoPkInput.value = deletePhotoPk;
+                form.submit();
             }
         }
     };
 
-    // 최대 5개의 사진만 표시 (첫 번째는 2x2, 나머지 4개는 1x1)
     const displayPhotos = room.photos.slice(0, 5);
 
     return (
         <Box
-            mt={10}
-            pb={40}
+            mt={{ base: 5, md: 10 }}
+            pb={{ base: 20, md: 40 }}
             px={{
-                base: 0,
+                base: 4,
+                md: 6,
                 lg: 0,
             }}
         >
-            {/* 삭제 확인 모달 */}
             <DialogRoot open={showDeleteModal} onOpenChange={(e) => {
-                if (import.meta.env.DEV) {
-                    console.log("Dialog onOpenChange:", e.open);
-                }
                 setShowDeleteModal(e.open);
                 if (!e.open) {
                     setDeletePhotoPk(null);
@@ -211,22 +192,31 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                 </DialogPositioner>
             </DialogRoot>
 
-            {/* 삭제용 숨겨진 Form */}
             <Form method="post" id="delete-photo-form" style={{ display: "none" }}>
                 <Input type="hidden" name="intent" value="delete" />
                 <Input type="hidden" name="photoPk" value={deletePhotoPk || ""} />
             </Form>
 
-            <HStack justifyContent="space-between" alignItems="center" mb={4}>
+            <Box
+                display="flex"
+                flexDirection={{ base: "column", md: "row" }}
+                justifyContent="space-between"
+                alignItems={{ base: "flex-start", md: "center" }}
+                gap={{ base: 3, md: 0 }}
+                mb={4}
+                w="100%"
+            >
                 {isLoading ? (
-                    <Skeleton height="43px" width="25%" />
+                    <Skeleton height="43px" width={{ base: "100%", md: "25%" }} />
                 ) : (
-                    <Heading>{room.name}</Heading>
+                    <Heading fontSize={{ base: "xl", md: "2xl" }}>{room.name}</Heading>
                 )}
                 {room.is_owner && (
                     <Button
                         onClick={() => setShowUploadForm(!showUploadForm)}
                         colorPalette="red"
+                        size={{ base: "sm", md: "md" }}
+                        w={{ base: "100%", md: "auto" }}
                     >
                         <HStack gap={2}>
                             <FaCamera />
@@ -234,10 +224,10 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                         </HStack>
                     </Button>
                 )}
-            </HStack>
+            </Box>
 
             {showUploadForm && room.is_owner && (
-                <Box mb={8} p={6} borderWidth="1px" borderRadius="lg" bg="gray.50">
+                <Box mb={8} p={{ base: 4, md: 6 }} borderWidth="1px" borderRadius="lg" bg="gray.50">
                     <Form method="post" encType="multipart/form-data">
                         <VStack gap={4}>
                             <Input
@@ -353,8 +343,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
 
             {displayPhotos.length > 0 && (
                 displayPhotos.length === 1 ? (
-                    // 1개: 전체 너비
-                    <Box mt={8} rounded="xl" overflow="hidden" position="relative">
+                    <Box mt={{ base: 4, md: 8 }} rounded="xl" overflow="hidden" position="relative">
                         {room.is_owner && displayPhotos[0] && (
                             <Button
                                 position="absolute"
@@ -362,21 +351,23 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                                 right={2}
                                 zIndex={10}
                                 size="sm"
-                                colorPalette="red"
+                                variant="ghost"
+                                bg="transparent"
+                                _hover={{ bg: "rgba(0, 0, 0, 0.1)" }}
                                 onClick={() => handleDeleteClick(displayPhotos[0].pk)}
                                 aria-label="Delete photo"
                             >
-                                <FaTrash />
+                                <FaTrash color="red" />
                             </Button>
                         )}
                         {displayPhotos[0] && displayPhotos[0].file && displayPhotos[0].file.trim() !== "" ? (
                             isLoading ? (
-                                <Skeleton h="60vh" w="100%" />
+                                <Skeleton h={{ base: "50vh", md: "60vh" }} w="100%" />
                             ) : (
                                 <Image
                                     objectFit="cover"
                                     w="100%"
-                                    h="60vh"
+                                    h={{ base: "50vh", md: "60vh" }}
                                     src={displayPhotos[0].file}
                                     alt={displayPhotos[0].description || room.name}
                                     loading="lazy"
@@ -385,27 +376,21 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                         ) : null}
                     </Box>
                 ) : (
-                    // 2개 이상: 첫 번째 사진 크게 (2x2), 나머지 작게 (2x2 그리드)
-                    <Grid
-                        mt={8}
-                        rounded="xl"
-                        overflow="hidden"
-                        gap={2}
-                        height="60vh"
-                        templateRows="1fr 1fr"
-                        templateColumns="repeat(4, 1fr)"
+                    <VStack
+                        mt={{ base: 4, md: 8 }}
+                        gap={{ base: 3, md: 2 }}
+                        display={{ base: "flex", md: "none" }}
                     >
-                        {displayPhotos.slice(0, 5).map((photo, index) => {
+                        {displayPhotos.map((photo) => {
                             if (!photo || !photo.file || photo.file.trim() === "") return null;
-
-                            const isFirst = index === 0;
                             return (
                                 <Box
                                     key={photo.pk}
-                                    gridColumn={isFirst ? "span 2" : "span 1"}
-                                    gridRow={isFirst ? "span 2" : "span 1"}
+                                    w="100%"
+                                    rounded="xl"
                                     overflow="hidden"
                                     position="relative"
+                                    h={{ base: "60vh", sm: "50vh" }}
                                 >
                                     {room.is_owner && (
                                         <Button
@@ -414,11 +399,13 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                                             right={2}
                                             zIndex={10}
                                             size="sm"
-                                            colorPalette="red"
+                                            variant="ghost"
+                                            bg="transparent"
+                                            _hover={{ bg: "rgba(0, 0, 0, 0.1)" }}
                                             onClick={() => handleDeleteClick(photo.pk)}
                                             aria-label="Delete photo"
                                         >
-                                            <FaTrash />
+                                            <FaTrash color="red" />
                                         </Button>
                                     )}
                                     {isLoading ? (
@@ -436,35 +423,99 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                                 </Box>
                             );
                         })}
-                    </Grid>
+                    </VStack>
                 )
             )}
 
-            <HStack w="40%" justifyContent="space-between" mt={10}>
-                <VStack alignItems="flex-start">
+            {displayPhotos.length > 1 && (
+                <Grid
+                    mt={{ base: 4, md: 8 }}
+                    rounded="xl"
+                    overflow="hidden"
+                    gap={2}
+                    height="60vh"
+                    templateRows="1fr 1fr"
+                    templateColumns="repeat(4, 1fr)"
+                    display={{ base: "none", md: "grid" }}
+                >
+                    {displayPhotos.slice(0, 5).map((photo, index) => {
+                        if (!photo || !photo.file || photo.file.trim() === "") return null;
+
+                        const isFirst = index === 0;
+                        return (
+                            <Box
+                                key={photo.pk}
+                                gridColumn={isFirst ? "span 2" : "span 1"}
+                                gridRow={isFirst ? "span 2" : "span 1"}
+                                overflow="hidden"
+                                position="relative"
+                            >
+                                {room.is_owner && (
+                                    <Button
+                                        position="absolute"
+                                        top={2}
+                                        right={2}
+                                        zIndex={10}
+                                        size="sm"
+                                        variant="ghost"
+                                        bg="transparent"
+                                        _hover={{ bg: "rgba(0, 0, 0, 0.1)" }}
+                                        onClick={() => handleDeleteClick(photo.pk)}
+                                        aria-label="Delete photo"
+                                    >
+                                        <FaTrash color="red" />
+                                    </Button>
+                                )}
+                                {isLoading ? (
+                                    <Skeleton h="100%" w="100%" />
+                                ) : (
+                                    <Image
+                                        objectFit="cover"
+                                        w="100%"
+                                        h="100%"
+                                        src={photo.file}
+                                        alt={photo.description || room.name}
+                                        loading="lazy"
+                                    />
+                                )}
+                            </Box>
+                        );
+                    })}
+                </Grid>
+            )}
+
+            <HStack
+                w={{ base: "100%", md: "40%" }}
+                justifyContent="space-between"
+                alignItems={{ base: "flex-start", md: "center" }}
+                mt={{ base: 6, md: 10 }}
+                flexDirection={{ base: "column", md: "row" }}
+                gap={{ base: 4, md: 0 }}
+            >
+                <VStack alignItems="flex-start" w={{ base: "100%", md: "auto" }}>
                     {isLoading ? (
-                        <Skeleton height="30px" width="300px" />
+                        <Skeleton height="30px" width={{ base: "100%", md: "300px" }} />
                     ) : (
-                        <Heading fontSize="2xl">
+                        <Heading fontSize={{ base: "xl", md: "2xl" }}>
                             House hosted by {room.owner.name}
                         </Heading>
                     )}
                     {isLoading ? (
-                        <Skeleton height="30px" width="200px" />
+                        <Skeleton height="30px" width={{ base: "100%", md: "200px" }} />
                     ) : (
                         <VStack alignItems="flex-start" gap={2} w="100%">
-                            <HStack justifyContent="flex-start" w="100%">
-                                <Text>
+                            <HStack justifyContent="flex-start" w="100%" flexWrap="wrap">
+                                <Text fontSize={{ base: "sm", md: "md" }}>
                                     {room.toilets} toilet{room.toilets === 1 ? "" : "s"}
                                 </Text>
-                                <Text>∙</Text>
-                                <Text>
+                                <Text fontSize={{ base: "sm", md: "md" }}>∙</Text>
+                                <Text fontSize={{ base: "sm", md: "md" }}>
                                     {room.rooms} room{room.rooms === 1 ? "" : "s"}
                                 </Text>
                                 {room.beds !== undefined && (
                                     <>
-                                        <Text>∙</Text>
-                                        <Text>
+                                        <Text fontSize={{ base: "sm", md: "md" }}>∙</Text>
+                                        <Text fontSize={{ base: "sm", md: "md" }}>
                                             {room.beds} bed{room.beds === 1 ? "" : "s"}
                                         </Text>
                                     </>
@@ -472,7 +523,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                             </HStack>
                             {room.category && (
                                 <Box>
-                                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600" fontWeight="medium">
                                         Category: <Text as="span" fontWeight="bold">{room.category.name}</Text>
                                     </Text>
                                 </Box>
@@ -481,9 +532,9 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                     )}
                 </VStack>
                 {isLoading ? (
-                    <Skeleton width="80px" height="80px" rounded="full" />
+                    <Skeleton width={{ base: "60px", md: "80px" }} height={{ base: "60px", md: "80px" }} rounded="full" />
                 ) : (
-                    <Avatar.Root size="xl">
+                    <Avatar.Root size={{ base: "lg", md: "xl" }}>
                         <Avatar.Image src={room.owner.avatar} alt={room.owner.name} />
                         <Avatar.Fallback name={room.owner.name} />
                     </Avatar.Root>
@@ -491,8 +542,8 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
             </HStack>
 
             {room.amenities && room.amenities.length > 0 && (
-                <Box mt={10}>
-                    <Heading fontSize="2xl" mb={5}>
+                <Box mt={{ base: 6, md: 10 }}>
+                    <Heading fontSize={{ base: "xl", md: "2xl" }} mb={5}>
                         What this place offers
                     </Heading>
                     <Grid
@@ -501,7 +552,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                             md: "1fr 1fr",
                             lg: "1fr 1fr 1fr",
                         }}
-                        gap={4}
+                        gap={{ base: 3, md: 4 }}
                         mt={5}
                     >
                         {room.amenities.map((amenity) => (
@@ -534,19 +585,19 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
             )}
 
             {room.description && (
-                <Box mt={10}>
-                    <Heading fontSize="2xl" mb={5}>
+                <Box mt={{ base: 6, md: 10 }}>
+                    <Heading fontSize={{ base: "xl", md: "2xl" }} mb={5}>
                         About this place
                     </Heading>
-                    <Text fontSize="md" color="gray.700" lineHeight="tall" whiteSpace="pre-line">
+                    <Text fontSize={{ base: "sm", md: "md" }} color="gray.700" lineHeight="tall" whiteSpace="pre-line">
                         {room.description}
                     </Text>
                 </Box>
             )}
 
-            <Box mt={10}>
-                <Heading fontSize="2xl" mb={5}>
-                    <HStack>
+            <Box mt={{ base: 6, md: 10 }}>
+                <Heading fontSize={{ base: "xl", md: "2xl" }} mb={5}>
+                    <HStack gap={2} flexWrap="wrap">
                         <FaStar /> <Text>{room.rating}</Text>
                         <Text>∙</Text>
                         <Text>
@@ -556,13 +607,13 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                 </Heading>
 
                 {reviews.length > 0 && (
-                    <Container mt={16} maxW="container.lg" mx="0">
+                    <Container mt={{ base: 8, md: 16 }} maxW="container.lg" mx="0" px={{ base: 0, md: 4 }}>
                         <Grid
                             templateColumns={{
                                 base: "1fr",
                                 md: "1fr 1fr",
                             }}
-                            gap={10}
+                            gap={{ base: 6, md: 10 }}
                         >
                             {reviews.map((review, index) => (
                                 <VStack key={index} alignItems="flex-start" gap={3}>
