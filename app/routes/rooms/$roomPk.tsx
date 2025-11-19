@@ -59,7 +59,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
             >
                 {[0, 1, 2, 3, 4].map((index) => {
                     const photo = displayPhotos[index];
-                    if (!photo) return null;
+                    if (!photo || !photo.file) return null;
 
                     const isFirst = index === 0;
                     return (
@@ -76,7 +76,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                                     objectFit="cover"
                                     w="100%"
                                     h="100%"
-                                    src={photo.file}
+                                    src={photo.file || undefined}
                                     alt={photo.description || room.name}
                                     loading="lazy"
                                 />
@@ -98,15 +98,32 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                     {isLoading ? (
                         <Skeleton height="30px" width="200px" />
                     ) : (
-                        <HStack justifyContent="flex-start" w="100%">
-                            <Text>
-                                {room.toilets} toilet{room.toilets === 1 ? "" : "s"}
-                            </Text>
-                            <Text>∙</Text>
-                            <Text>
-                                {room.rooms} room{room.rooms === 1 ? "" : "s"}
-                            </Text>
-                        </HStack>
+                        <VStack alignItems="flex-start" gap={2} w="100%">
+                            <HStack justifyContent="flex-start" w="100%">
+                                <Text>
+                                    {room.toilets} toilet{room.toilets === 1 ? "" : "s"}
+                                </Text>
+                                <Text>∙</Text>
+                                <Text>
+                                    {room.rooms} room{room.rooms === 1 ? "" : "s"}
+                                </Text>
+                                {room.beds !== undefined && (
+                                    <>
+                                        <Text>∙</Text>
+                                        <Text>
+                                            {room.beds} bed{room.beds === 1 ? "" : "s"}
+                                        </Text>
+                                    </>
+                                )}
+                            </HStack>
+                            {room.category && (
+                                <Box>
+                                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                        Category: <Text as="span" fontWeight="bold">{room.category.name}</Text>
+                                    </Text>
+                                </Box>
+                            )}
+                        </VStack>
                     )}
                 </VStack>
                 {isLoading ? (
@@ -118,6 +135,60 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                     </Avatar.Root>
                 )}
             </HStack>
+
+            {room.amenities && room.amenities.length > 0 && (
+                <Box mt={10}>
+                    <Heading fontSize="2xl" mb={5}>
+                        What this place offers
+                    </Heading>
+                    <Grid
+                        templateColumns={{
+                            base: "1fr",
+                            md: "1fr 1fr",
+                            lg: "1fr 1fr 1fr",
+                        }}
+                        gap={4}
+                        mt={5}
+                    >
+                        {room.amenities.map((amenity) => (
+                            <HStack key={amenity.pk} alignItems="flex-start" gap={3}>
+                                <Box
+                                    w="24px"
+                                    h="24px"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    flexShrink={0}
+                                    mt={0.5}
+                                >
+                                    <Text fontSize="lg">✓</Text>
+                                </Box>
+                                <VStack alignItems="flex-start" gap={0} flex={1}>
+                                    <Text fontWeight="medium" fontSize="md">
+                                        {amenity.name}
+                                    </Text>
+                                    {amenity.description && (
+                                        <Text fontSize="sm" color="gray.600">
+                                            {amenity.description}
+                                        </Text>
+                                    )}
+                                </VStack>
+                            </HStack>
+                        ))}
+                    </Grid>
+                </Box>
+            )}
+
+            {room.description && (
+                <Box mt={10}>
+                    <Heading fontSize="2xl" mb={5}>
+                        About this place
+                    </Heading>
+                    <Text fontSize="md" color="gray.700" lineHeight="tall" whiteSpace="pre-line">
+                        {room.description}
+                    </Text>
+                </Box>
+            )}
 
             <Box mt={10}>
                 <Heading fontSize="2xl" mb={5}>
