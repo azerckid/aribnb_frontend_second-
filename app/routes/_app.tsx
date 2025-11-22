@@ -44,7 +44,7 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
         };
 
         checkUser();
-    }, [isLoggedIn, user]);
+    }, []);
 
     const onLogoutSuccess = async () => {
         const loadingToastId = toaster.create({
@@ -98,13 +98,49 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     isOpen={login.open}
                     onClose={login.onClose}
                     onLoginSuccess={async () => {
-                        // LoginModal에서 직접 리로드하므로 여기서는 아무것도 하지 않음
+                        // 로그인 성공 후 즉시 사용자 정보 가져오기
+                        try {
+                            const currentUser = await getMe();
+                            setUser(currentUser);
+                            setIsLoggedIn(true);
+                        } catch (error) {
+                            // 쿠키가 아직 설정되지 않았을 수 있으므로 잠시 후 재시도
+                            setTimeout(async () => {
+                                try {
+                                    const currentUser = await getMe();
+                                    setUser(currentUser);
+                                    setIsLoggedIn(true);
+                                } catch (retryError) {
+                                    console.error("Failed to get user after login:", retryError);
+                                    // 재시도 실패 시 페이지 리로드
+                                    window.location.reload();
+                                }
+                            }, 300);
+                        }
                     }} />
                 <SignUpModal
                     isOpen={signup.open}
                     onClose={signup.onClose}
                     onSignUpSuccess={async () => {
-                        // SignUpModal에서 직접 리로드하므로 여기서는 아무것도 하지 않음
+                        // 회원가입 성공 후 즉시 사용자 정보 가져오기
+                        try {
+                            const currentUser = await getMe();
+                            setUser(currentUser);
+                            setIsLoggedIn(true);
+                        } catch (error) {
+                            // 쿠키가 아직 설정되지 않았을 수 있으므로 잠시 후 재시도
+                            setTimeout(async () => {
+                                try {
+                                    const currentUser = await getMe();
+                                    setUser(currentUser);
+                                    setIsLoggedIn(true);
+                                } catch (retryError) {
+                                    console.error("Failed to get user after signup:", retryError);
+                                    // 재시도 실패 시 페이지 리로드
+                                    window.location.reload();
+                                }
+                            }, 300);
+                        }
                     }} />
             </AppLayout>
         </Theme>

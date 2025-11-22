@@ -51,29 +51,18 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
         try {
             await login(username, password);
-
-            // 폼 초기화
             setUsername("");
             setPassword("");
 
-            // 모달 먼저 닫기
             onClose();
 
-            // 토스트 생성
             toaster.create({
                 title: "로그인 성공",
                 type: "success",
                 duration: 5000,
             });
 
-            // onLoginSuccess 호출
             onLoginSuccess?.();
-
-            // 쿠키가 설정될 시간을 확보한 후 페이지 리로드
-            setTimeout(() => {
-                console.log("Reloading page after login");
-                window.location.reload();
-            }, 500);
         } catch (error) {
             const errorMessage = parseApiError(error, "로그인에 실패했습니다. 다시 시도해주세요.");
 
