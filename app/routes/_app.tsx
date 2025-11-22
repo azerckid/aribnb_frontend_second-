@@ -100,7 +100,6 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                             const currentUser = await getMe();
                             setUser(currentUser);
                             setIsLoggedIn(true);
-                            window.location.reload();
                         } catch (error) {
                             // 쿠키가 아직 설정되지 않았을 수 있으므로 잠시 후 재시도
                             setTimeout(async () => {

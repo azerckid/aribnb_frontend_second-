@@ -61,7 +61,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 type: "success",
                 duration: 5000,
             });
-
+            window.location.reload();
             onLoginSuccess?.();
         } catch (error) {
             const errorMessage = parseApiError(error, "로그인에 실패했습니다. 다시 시도해주세요.");
