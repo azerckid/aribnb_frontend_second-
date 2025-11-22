@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet, useNavigate, useSearchParams, useRevalidator } from "react-router";
+import { Outlet } from "react-router";
 
 import type { Route } from "./+types/_app";
 
@@ -19,9 +19,6 @@ type Appearance = "light" | "dark";
 export default function AppRouteLayout({ }: Route.ComponentProps) {
     const login = useDisclosure();
     const signup = useDisclosure();
-    const navigate = useNavigate();
-    const revalidator = useRevalidator();
-    const [searchParams] = useSearchParams();
     const [user, setUser] = useState<IUser | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -146,5 +143,3 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
         </Theme>
     );
 }
-
-
