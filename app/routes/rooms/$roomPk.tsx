@@ -625,10 +625,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                         <Box>
                             <Container maxW="container.lg" mx="0" px={{ base: 0, md: 4 }}>
                                 <Grid
-                                    templateColumns={{
-                                        base: "1fr",
-                                        md: "1fr 1fr",
-                                    }}
+                                    templateColumns="1fr"
                                     gap={{ base: 6, md: 10 }}
                                 >
                                     {reviews.map((review, index) => (
@@ -671,6 +668,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
 
                     <Box pt={{ base: 0, md: 10 }}>
                         <Calendar
+                            showDoubleView
                             onChange={(value) => handleDateChange(value as Date | [Date, Date] | null)}
                             value={dates}
                             prev2Label={null}
