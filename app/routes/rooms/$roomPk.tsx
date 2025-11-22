@@ -93,6 +93,16 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
         setDates(value);
     };
 
+    // Extract checkIn and checkOut dates when range is selected
+    useEffect(() => {
+        if (dates && Array.isArray(dates) && dates.length === 2) {
+            const [firstDate, secondDate] = dates;
+            const [checkIn] = firstDate.toJSON().split("T");
+            const [checkOut] = secondDate.toJSON().split("T");
+            console.log("Check-in:", checkIn, "Check-out:", checkOut);
+        }
+    }, [dates]);
+
     useEffect(() => {
         if (!actionData?.success || navigation.state !== "idle") return;
 
