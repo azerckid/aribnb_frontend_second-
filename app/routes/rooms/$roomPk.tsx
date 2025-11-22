@@ -8,6 +8,8 @@ import { useState, useRef, useEffect } from "react";
 import { parseApiError } from "~/utils/error";
 import { requireHost } from "~/utils/auth";
 import { toaster } from "~/components/ui/toaster";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 export function meta({ }: Route.MetaArgs) {
     return [
@@ -85,6 +87,11 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [deletePhotoPk, setDeletePhotoPk] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [dates, setDates] = useState<Date | [Date, Date] | null>(null);
+
+    const handleDateChange = (value: Date | [Date, Date] | null) => {
+        setDates(value);
+    };
 
     useEffect(() => {
         if (!actionData?.success || navigation.state !== "idle") return;
@@ -606,51 +613,75 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                     </HStack>
                 </Heading>
 
-                {reviews.length > 0 && (
-                    <Container mt={{ base: 8, md: 16 }} maxW="container.lg" mx="0" px={{ base: 0, md: 4 }}>
-                        <Grid
-                            templateColumns={{
-                                base: "1fr",
-                                md: "1fr 1fr",
-                            }}
-                            gap={{ base: 6, md: 10 }}
-                        >
-                            {reviews.map((review, index) => (
-                                <VStack key={index} alignItems="flex-start" gap={3}>
-                                    <HStack gap={3} alignItems="flex-start">
-                                        <Avatar.Root size="md">
-                                            <Avatar.Image src={review.user.avatar} alt={review.user.name || review.user.username} />
-                                            <Avatar.Fallback name={review.user.name || review.user.username} />
-                                        </Avatar.Root>
-                                        <VStack alignItems="flex-start" gap={1} flex={1}>
-                                            <Text fontWeight="bold" fontSize="md">
-                                                {review.user.name || review.user.username}
-                                            </Text>
-                                            <HStack gap={1} alignItems="center">
-                                                <FaStar size={12} />
-                                                <Text fontSize="sm">{review.rating}</Text>
-                                                {review.created_at && (
-                                                    <>
-                                                        <Text fontSize="sm" color="gray.500">∙</Text>
-                                                        <Text fontSize="sm" color="gray.500">
-                                                            {new Date(review.created_at).toLocaleDateString("en-US", {
-                                                                month: "short",
-                                                                year: "numeric",
-                                                            })}
-                                                        </Text>
-                                                    </>
-                                                )}
+                <Grid
+                    templateColumns={{
+                        base: "1fr",
+                        md: "1fr 1fr",
+                    }}
+                    gap={{ base: 6, md: 10 }}
+                    mt={{ base: 8, md: 16 }}
+                >
+                    {reviews.length > 0 && (
+                        <Box>
+                            <Container maxW="container.lg" mx="0" px={{ base: 0, md: 4 }}>
+                                <Grid
+                                    templateColumns={{
+                                        base: "1fr",
+                                        md: "1fr 1fr",
+                                    }}
+                                    gap={{ base: 6, md: 10 }}
+                                >
+                                    {reviews.map((review, index) => (
+                                        <VStack key={index} alignItems="flex-start" gap={3}>
+                                            <HStack gap={3} alignItems="flex-start">
+                                                <Avatar.Root size="md">
+                                                    <Avatar.Image src={review.user.avatar} alt={review.user.name || review.user.username} />
+                                                    <Avatar.Fallback name={review.user.name || review.user.username} />
+                                                </Avatar.Root>
+                                                <VStack alignItems="flex-start" gap={1} flex={1}>
+                                                    <Text fontWeight="bold" fontSize="md">
+                                                        {review.user.name || review.user.username}
+                                                    </Text>
+                                                    <HStack gap={1} alignItems="center">
+                                                        <FaStar size={12} />
+                                                        <Text fontSize="sm">{review.rating}</Text>
+                                                        {review.created_at && (
+                                                            <>
+                                                                <Text fontSize="sm" color="gray.500">∙</Text>
+                                                                <Text fontSize="sm" color="gray.500">
+                                                                    {new Date(review.created_at).toLocaleDateString("en-US", {
+                                                                        month: "short",
+                                                                        year: "numeric",
+                                                                    })}
+                                                                </Text>
+                                                            </>
+                                                        )}
+                                                    </HStack>
+                                                </VStack>
                                             </HStack>
+                                            <Text fontSize="sm" color="gray.600" lineHeight="tall">
+                                                {review.payload}
+                                            </Text>
                                         </VStack>
-                                    </HStack>
-                                    <Text fontSize="sm" color="gray.600" lineHeight="tall">
-                                        {review.payload}
-                                    </Text>
-                                </VStack>
-                            ))}
-                        </Grid>
-                    </Container>
-                )}
+                                    ))}
+                                </Grid>
+                            </Container>
+                        </Box>
+                    )}
+
+                    <Box pt={{ base: 0, md: 10 }}>
+                        <Calendar
+                            onChange={(value) => handleDateChange(value as Date | [Date, Date] | null)}
+                            value={dates}
+                            prev2Label={null}
+                            next2Label={null}
+                            minDetail="month"
+                            minDate={new Date()}
+                            maxDate={new Date(Date.now() + 60 * 60 * 24 * 7 * 4 * 6 * 1000)}
+                            selectRange
+                        />
+                    </Box>
+                </Grid>
             </Box>
         </Box>
     );
