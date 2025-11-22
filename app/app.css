@@ -223,6 +223,7 @@ body {
   padding: 2em 0.5em;
 }
 
+/* 1. 모든 날짜 기본 스타일 (검은색) */
 .react-calendar__tile {
   max-width: 100%;
   padding: 12px 6.6667px;
@@ -243,12 +244,12 @@ body {
   text-decoration: none !important;
 }
 
-/* 주말 날짜만 붉은색으로 표시 (토요일, 일요일만 - 이전/다음 달이 아닌 경우) */
-.react-calendar__tile.react-calendar__month-view__days__day--weekend:not(.react-calendar__month-view__days__day--neighboringMonth) {
+/* 2. 주말 날짜 스타일 (붉은색) - 기본 스타일보다 아래에 위치하여 덮어씀 */
+.react-calendar__month-view__days__day--weekend {
   color: rgb(197, 48, 48) !important;
 }
 
-.react-calendar__tile.react-calendar__month-view__days__day--weekend:not(.react-calendar__month-view__days__day--neighboringMonth) abbr {
+.react-calendar__month-view__days__day--weekend abbr {
   color: rgb(197, 48, 48) !important;
 }
 
