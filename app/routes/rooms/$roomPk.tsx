@@ -9,6 +9,7 @@ import { parseApiError } from "~/utils/error";
 import { requireHost } from "~/utils/auth";
 import { toaster } from "~/components/ui/toaster";
 import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 export function meta({ }: Route.MetaArgs) {
     return [
