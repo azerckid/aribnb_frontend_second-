@@ -1,10 +1,10 @@
-import { useNavigation, Form as RouterForm, useActionData, useRevalidator } from "react-router";
+import { useNavigation, Form as RouterForm, useActionData, useRevalidator, Link } from "react-router";
 import { useState, useEffect } from "react";
 
 import type { Route } from "./+types/$roomPk";
 
 import { Box, Button, Grid, HStack, Heading, Input, Skeleton, Text } from "@chakra-ui/react";
-import { FaCamera } from "react-icons/fa";
+import { FaCamera, FaEdit } from "react-icons/fa";
 import { requireHost } from "~/utils/auth";
 import { parseApiError } from "~/utils/error";
 import { toaster } from "~/components/ui/toaster";
@@ -172,17 +172,32 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                     <Heading fontSize={{ base: "xl", md: "2xl" }}>{room.name}</Heading>
                 )}
                 {room.is_owner && (
-                    <Button
-                        onClick={() => setShowUploadForm(!showUploadForm)}
-                        colorPalette="red"
-                        size={{ base: "sm", md: "md" }}
-                        w={{ base: "100%", md: "auto" }}
-                    >
-                        <HStack gap={2}>
-                            <FaCamera />
-                            <Text>{showUploadForm ? "Cancel Upload" : "Upload Photo"}</Text>
-                        </HStack>
-                    </Button>
+                    <HStack gap={2}>
+                        <Button
+                            asChild
+                            colorPalette="blue"
+                            size={{ base: "sm", md: "md" }}
+                            w={{ base: "100%", md: "auto" }}
+                        >
+                            <Link to={`/rooms/${room.pk || room.id}/edit`}>
+                                <HStack gap={2}>
+                                    <FaEdit />
+                                    <Text>Edit Room</Text>
+                                </HStack>
+                            </Link>
+                        </Button>
+                        <Button
+                            onClick={() => setShowUploadForm(!showUploadForm)}
+                            colorPalette="red"
+                            size={{ base: "sm", md: "md" }}
+                            w={{ base: "100%", md: "auto" }}
+                        >
+                            <HStack gap={2}>
+                                <FaCamera />
+                                <Text>{showUploadForm ? "Cancel Upload" : "Upload Photo"}</Text>
+                            </HStack>
+                        </Button>
+                    </HStack>
                 )}
             </Box>
 

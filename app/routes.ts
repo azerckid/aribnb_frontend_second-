@@ -6,6 +6,7 @@ export default [
         route("users", "routes/users/index.tsx"),
         route("rooms/upload", "routes/rooms/upload.tsx"),
         route("rooms/:roomPk", "routes/rooms/$roomPk.tsx"),
+        route("rooms/:roomPk/edit", "routes/rooms/$roomPk.edit.tsx"),
         route("rooms/:roomPk/photos", "routes/rooms/$roomPk.photos.tsx"),
         route("auth/github/callback", "routes/auth/github/callback.tsx"),
         route("auth/kakao/callback", "routes/auth/kakao/callback.tsx"),

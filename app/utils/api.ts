@@ -139,22 +139,76 @@ export async function getRoomReviews(roomPk: number | string): Promise<IReview[]
 }
 
 /**
+ * 예약 가능 여부 확인 응답 타입
+ */
+export interface CheckBookingResponse {
+    available: boolean;
+    message: string;
+    reason?: "INSUFFICIENT_BEDS" | "INVALID_DATES" | "INVALID_DATE_FORMAT" | "INVALID_GUESTS" | "NO_BEDS_CONFIGURED" | "EXCEEDS_CAPACITY";
+    details?: {
+        requested_guests?: number;
+        total_booked_guests?: number;
+        room_capacity?: number;
+        available_beds?: number;
+        check_in?: string;
+        check_out?: string;
+    };
+}
+
+/**
+ * 예약 상황 조회 응답 타입
+ */
+export interface BookingStatusResponse {
+    room_id: number;
+    room_name: string;
+    check_in: string;
+    check_out: string;
+    room_capacity: number;
+    total_booked_guests: number;
+    available_beds: number;
+    bookings: {
+        room_bookings: Array<{
+            pk: number;
+            check_in: string;
+            check_out: string;
+            guests: number;
+            bed: number | null;
+            price: number;
+        }>;
+        bed_bookings: Array<{
+            pk: number;
+            check_in: string;
+            check_out: string;
+            guests: number;
+            bed: number;
+            price: number;
+        }>;
+    };
+    summary: {
+        total_bookings: number;
+        occupancy_rate: number;
+    };
+}
+
+/**
  * 예약 가능 여부를 확인합니다.
  * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
  * @param checkIn 체크인 날짜 (YYYY-MM-DD 형식)
  * @param checkOut 체크아웃 날짜 (YYYY-MM-DD 형식)
+ * @param guests 게스트 수 (선택, 기본값: 1)
  * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
- * @returns 예약 가능 여부 객체 { available: boolean, message: string }
+ * @returns 예약 가능 여부 객체
  * @throws {Error} API 호출 실패 시 에러
  */
 export async function checkBooking(
     roomPk: number | string,
     checkIn: string,
     checkOut: string,
+    guests: number = 1,
     cookie?: string
-): Promise<{ available: boolean; message: string }> {
-    return apiGet<{ available: boolean; message: string }>(
-        `/rooms/${roomPk}/bookings/check?check_in=${checkIn}&check_out=${checkOut}`,
+): Promise<CheckBookingResponse> {
+    return apiGet<CheckBookingResponse>(
+        `/rooms/${roomPk}/bookings/check?check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`,
         cookie ? { cookie } : undefined
     );
 }
@@ -211,6 +265,27 @@ export async function createBooking(
     }
 
     return res.json() as Promise<{ pk: number; check_in: string; check_out: string; guests: number }>;
+}
+
+/**
+ * 기간별 예약 상황을 조회합니다.
+ * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param checkIn 체크인 날짜 (YYYY-MM-DD 형식)
+ * @param checkOut 체크아웃 날짜 (YYYY-MM-DD 형식)
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 예약 상황 정보 객체
+ * @throws {Error} API 호출 실패 시 에러
+ */
+export async function getBookingStatus(
+    roomPk: number | string,
+    checkIn: string,
+    checkOut: string,
+    cookie?: string
+): Promise<BookingStatusResponse> {
+    return apiGet<BookingStatusResponse>(
+        `/rooms/${roomPk}/bookings/status?check_in=${checkIn}&check_out=${checkOut}`,
+        cookie ? { cookie } : undefined
+    );
 }
 
 /**
@@ -424,6 +499,82 @@ export async function uploadRoom(
             throw new Error(`UNAUTHORIZED: ${text}`);
         }
         throw new Error(`Room upload failed: ${text}`);
+    }
+
+    return res.json() as Promise<IRoom>;
+}
+
+/**
+ * 방 정보를 업데이트합니다.
+ * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param data 방 정보 객체
+ * @param data.name 방 이름
+ * @param data.country 국가
+ * @param data.city 도시
+ * @param data.address 주소
+ * @param data.price 가격 (숫자)
+ * @param data.rooms 방 개수
+ * @param data.toilets 화장실 개수
+ * @param data.beds 침대 개수
+ * @param data.description 방 설명
+ * @param data.pet_friendly 반려동물 허용 여부
+ * @param data.kind 방 종류 ("entire_place" | "private_room" | "shared_room")
+ * @param data.category 카테고리 ID
+ * @param data.amenities 편의시설 ID 배열
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 업데이트된 방 정보 객체
+ * @throws {Error} 방 업데이트 실패 시 에러
+ */
+export async function updateRoom(
+    roomPk: number | string,
+    data: {
+        name: string;
+        country: string;
+        city: string;
+        address: string;
+        price: number;
+        rooms: number;
+        toilets: number;
+        beds: number;
+        description: string;
+        pet_friendly: boolean;
+        kind: string;
+        category: number;
+        amenities: number[];
+    },
+    cookie?: string
+): Promise<IRoom> {
+    const url = `${API_BASE_URL}/rooms/${roomPk}/`;
+    const csrfToken = getCsrfToken(cookie);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    if (cookie) {
+        headers["Cookie"] = cookie;
+    }
+
+    const res = await fetch(url, {
+        method: "PUT",
+        credentials: "include",
+        headers: headers as HeadersInit,
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        if (import.meta.env.DEV) {
+            console.error("Update room API error:", {
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+            });
+        }
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
+        throw new Error(`Room update failed: ${text}`);
     }
 
     return res.json() as Promise<IRoom>;
