@@ -63,7 +63,8 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
         if (import.meta.env.DEV) {
             console.error("Loader error:", error);
         }
-        return { user, amenities: [], categories: [] };
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return { user, amenities: [], categories: [], error: errorMessage };
     }
 }
 
@@ -165,6 +166,19 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                 <Heading textAlign="center" size="xl" mb={8}>
                     Upload Room
                 </Heading>
+
+                {/* Debug Info - Remove after fixing */}
+                <Box p={4} mb={4} bg="gray.100" borderRadius="md" fontSize="xs">
+                    <Text fontWeight="bold">Debug Info:</Text>
+                    <Text>Loader Error: {(loaderData as any).error || "None"}</Text>
+                    <Text>Amenities Type: {Array.isArray(amenities) ? "Array" : typeof amenities}</Text>
+                    <Text>Amenities Count: {amenitiesArray.length}</Text>
+                    <Text>Categories Type: {Array.isArray(categories) ? "Array" : typeof categories}</Text>
+                    <Text>Categories Count: {categoriesArray.length}</Text>
+                    <Text>Raw Amenities: {JSON.stringify(amenities).slice(0, 100)}</Text>
+                    <Text>Raw Categories: {JSON.stringify(categories).slice(0, 100)}</Text>
+                </Box>
+
                 <Form method="post">
                     <VStack gap={5} mt={5}>
                         <Box w="100%">
