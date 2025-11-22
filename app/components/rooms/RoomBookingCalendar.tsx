@@ -4,6 +4,7 @@ import { startOfToday, addMonths, isBefore } from "date-fns";
 import { useState, useEffect } from "react";
 import { checkBooking, createBooking } from "~/utils/api";
 import { parseApiError } from "~/utils/error";
+import { formatDate } from "~/utils/date";
 import { toaster } from "~/components/ui/toaster";
 import "react-day-picker/dist/style.css";
 
@@ -27,8 +28,8 @@ export function RoomBookingCalendar({ roomPk }: RoomBookingCalendarProps) {
             return;
         }
 
-        const [checkIn] = dateRange.from.toJSON().split("T");
-        const [checkOut] = dateRange.to.toJSON().split("T");
+        const checkIn = formatDate(dateRange.from);
+        const checkOut = formatDate(dateRange.to);
 
         setIsCreatingBooking(true);
         try {
@@ -58,8 +59,8 @@ export function RoomBookingCalendar({ roomPk }: RoomBookingCalendarProps) {
     // Check booking availability when date range is selected
     useEffect(() => {
         if (dateRange?.from && dateRange?.to) {
-            const [checkIn] = dateRange.from.toJSON().split("T");
-            const [checkOut] = dateRange.to.toJSON().split("T");
+            const checkIn = formatDate(dateRange.from);
+            const checkOut = formatDate(dateRange.to);
 
             setIsCheckingBooking(true);
             checkBooking(roomPk, checkIn, checkOut)

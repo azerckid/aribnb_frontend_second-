@@ -18,10 +18,11 @@ import { RoomPhotoGallery } from "~/components/rooms/RoomPhotoGallery";
 import { RoomBookingCalendar } from "~/components/rooms/RoomBookingCalendar";
 import { RoomPhotoDeleteModal } from "~/components/rooms/RoomPhotoDeleteModal";
 
-export function meta({ }: Route.MetaArgs) {
+export function meta({ data }: Route.MetaArgs) {
+    const roomName = data?.room?.name;
     return [
-        { title: "Room Detail | Guest House Booking" },
-        { name: "description", content: "Room detail page" },
+        { title: roomName ? `${roomName} | Guest House Booking` : "Room Detail | Guest House Booking" },
+        { name: "description", content: roomName ? `Book ${roomName} - Guest House Booking` : "Room detail page" },
     ];
 }
 
