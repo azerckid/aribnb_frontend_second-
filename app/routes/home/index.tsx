@@ -35,6 +35,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
 
   // redirect 파라미터 처리: 로그인된 사용자가 redirect 파라미터가 있으면 해당 경로로 이동
+  // 단, 로그인 모달이 열려있을 때는 처리하지 않음 (로그인 성공 후 _app.tsx에서 처리)
   useEffect(() => {
     const redirectTo = searchParams.get("redirect");
     if (redirectTo) {
@@ -42,12 +43,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       getMe()
         .then(() => {
           // 로그인되어 있으면 redirect 경로로 이동
-          const newSearchParams = new URLSearchParams(searchParams);
-          newSearchParams.delete("redirect");
-          navigate(redirectTo + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : ""), { replace: true });
+          // redirectTo는 이미 디코딩된 값 (/rooms/upload)
+          console.log("[Home] Redirecting to:", redirectTo);
+          navigate(redirectTo, { replace: true });
         })
-        .catch(() => {
+        .catch((error) => {
           // 로그인되지 않았으면 redirect 파라미터를 유지 (로그인 모달에서 처리)
+          console.log("[Home] Not logged in, keeping redirect parameter");
         });
     }
   }, [searchParams, navigate]);

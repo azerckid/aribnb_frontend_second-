@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useNavigate, useSearchParams } from "react-router";
 
 import type { Route } from "./+types/_app";
 
@@ -19,8 +19,11 @@ type Appearance = "light" | "dark";
 export default function AppRouteLayout({ }: Route.ComponentProps) {
     const login = useDisclosure();
     const signup = useDisclosure();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [user, setUser] = useState<IUser | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
     const [appearance, setAppearance] = useState<Appearance>("light");
     const toggleAppearance = () =>
@@ -80,8 +83,24 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     <Navigation
                         user={user}
                         isLoggedIn={isLoggedIn}
-                        onLoginClick={login.onOpen}
-                        onSignUpClick={signup.onOpen}
+                        onLoginClick={() => {
+                            // 로그인 모달을 열 때 현재 redirect 파라미터를 저장
+                            const redirectTo = searchParams.get("redirect");
+                            console.log("Opening login modal - redirectTo:", redirectTo);
+                            if (redirectTo) {
+                                setPendingRedirect(redirectTo);
+                                console.log("Set pendingRedirect to:", redirectTo);
+                            }
+                            login.onOpen();
+                        }}
+                        onSignUpClick={() => {
+                            // 회원가입 모달을 열 때 현재 redirect 파라미터를 저장
+                            const redirectTo = searchParams.get("redirect");
+                            if (redirectTo) {
+                                setPendingRedirect(redirectTo);
+                            }
+                            signup.onOpen();
+                        }}
                         onLogoutSuccess={onLogoutSuccess}
                         appearance={appearance}
                         onToggleAppearance={toggleAppearance} />
@@ -101,6 +120,15 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 const currentUser = await getMe();
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
+
+                                // 로그인 성공 후 redirect 파라미터가 있으면 해당 경로로 이동
+                                const redirectTo = pendingRedirect || searchParams.get("redirect");
+                                console.log("Login success - redirectTo:", redirectTo, "pendingRedirect:", pendingRedirect);
+                                if (redirectTo) {
+                                    setPendingRedirect(null);
+                                    console.log("Navigating to:", redirectTo);
+                                    navigate(redirectTo, { replace: true });
+                                }
                             } catch (error) {
                                 setUser(null);
                                 setIsLoggedIn(false);
@@ -117,6 +145,13 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 const currentUser = await getMe();
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
+
+                                // 회원가입 성공 후 redirect 파라미터가 있으면 해당 경로로 이동
+                                const redirectTo = pendingRedirect || searchParams.get("redirect");
+                                if (redirectTo) {
+                                    setPendingRedirect(null);
+                                    navigate(redirectTo, { replace: true });
+                                }
                             } catch (error) {
                                 setUser(null);
                                 setIsLoggedIn(false);
