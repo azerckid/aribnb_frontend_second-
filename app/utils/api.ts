@@ -139,6 +139,81 @@ export async function getRoomReviews(roomPk: number | string): Promise<IReview[]
 }
 
 /**
+ * 예약 가능 여부를 확인합니다.
+ * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param checkIn 체크인 날짜 (YYYY-MM-DD 형식)
+ * @param checkOut 체크아웃 날짜 (YYYY-MM-DD 형식)
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 예약 가능 여부 객체 { available: boolean, message: string }
+ * @throws {Error} API 호출 실패 시 에러
+ */
+export async function checkBooking(
+    roomPk: number | string,
+    checkIn: string,
+    checkOut: string,
+    cookie?: string
+): Promise<{ available: boolean; message: string }> {
+    return apiGet<{ available: boolean; message: string }>(
+        `/rooms/${roomPk}/bookings/check?check_in=${checkIn}&check_out=${checkOut}`,
+        cookie ? { cookie } : undefined
+    );
+}
+
+/**
+ * 예약을 생성합니다.
+ * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param checkIn 체크인 날짜 (YYYY-MM-DD 형식)
+ * @param checkOut 체크아웃 날짜 (YYYY-MM-DD 형식)
+ * @param guests 게스트 수 (선택, 기본값: 1)
+ * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
+ * @returns 생성된 예약 정보 객체
+ * @throws {Error} 예약 생성 실패 시 에러
+ */
+export async function createBooking(
+    roomPk: number | string,
+    checkIn: string,
+    checkOut: string,
+    guests: number = 1,
+    cookie?: string
+): Promise<{ pk: number; check_in: string; check_out: string; guests: number }> {
+    const url = `${API_BASE_URL}/rooms/${roomPk}/bookings/`;
+    const csrfToken = getCsrfToken(cookie);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    if (cookie) {
+        headers["Cookie"] = cookie;
+    }
+
+    const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: headers as HeadersInit,
+        body: JSON.stringify({ check_in: checkIn, check_out: checkOut, guests }),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        if (import.meta.env.DEV) {
+            console.error("Create booking API error:", {
+                status: res.status,
+                statusText: res.statusText,
+                response: text,
+            });
+        }
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
+        throw new Error(`Booking creation failed: ${text}`);
+    }
+
+    return res.json() as Promise<{ pk: number; check_in: string; check_out: string; guests: number }>;
+}
+
+/**
  * 현재 로그인한 사용자의 정보를 가져옵니다.
  * 서버 사이드 렌더링 환경에서 쿠키를 직접 전달할 수 있습니다.
  * @param cookie 선택적 쿠키 문자열 (서버 사이드 렌더링용)
