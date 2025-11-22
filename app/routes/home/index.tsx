@@ -45,7 +45,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           // 로그인되어 있으면 redirect 경로로 이동
           // redirectTo는 이미 디코딩된 값 (/rooms/upload)
           console.log("[Home] Redirecting to:", redirectTo);
-          navigate(redirectTo, { replace: true });
+          // window.location을 사용하여 강제로 페이지 이동
+          window.location.href = redirectTo;
         })
         .catch((error) => {
           // 로그인되지 않았으면 redirect 파라미터를 유지 (로그인 모달에서 처리)

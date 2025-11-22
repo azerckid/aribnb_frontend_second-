@@ -127,7 +127,8 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 if (redirectTo) {
                                     setPendingRedirect(null);
                                     console.log("Navigating to:", redirectTo);
-                                    navigate(redirectTo, { replace: true });
+                                    // window.location을 사용하여 강제로 페이지 이동
+                                    window.location.href = redirectTo;
                                 }
                             } catch (error) {
                                 setUser(null);
@@ -150,7 +151,8 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 const redirectTo = pendingRedirect || searchParams.get("redirect");
                                 if (redirectTo) {
                                     setPendingRedirect(null);
-                                    navigate(redirectTo, { replace: true });
+                                    // window.location을 사용하여 강제로 페이지 이동
+                                    window.location.href = redirectTo;
                                 }
                             } catch (error) {
                                 setUser(null);
