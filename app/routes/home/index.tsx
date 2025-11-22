@@ -34,26 +34,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const isLoading = navigation.state === "loading";
 
-  // redirect 파라미터 처리: 로그인된 사용자가 redirect 파라미터가 있으면 해당 경로로 이동
-  // 단, 로그인 모달이 열려있을 때는 처리하지 않음 (로그인 성공 후 _app.tsx에서 처리)
-  useEffect(() => {
-    const redirectTo = searchParams.get("redirect");
-    if (redirectTo) {
-      // 사용자가 로그인되어 있는지 확인
-      getMe()
-        .then(() => {
-          // 로그인되어 있으면 redirect 경로로 이동
-          // redirectTo는 이미 디코딩된 값 (/rooms/upload)
-          console.log("[Home] Redirecting to:", redirectTo);
-          // window.location을 사용하여 강제로 페이지 이동
-          window.location.href = redirectTo;
-        })
-        .catch((error) => {
-          // 로그인되지 않았으면 redirect 파라미터를 유지 (로그인 모달에서 처리)
-          console.log("[Home] Not logged in, keeping redirect parameter");
-        });
-    }
-  }, [searchParams, navigate]);
+  // redirect 파라미터는 더 이상 자동으로 처리하지 않음
+  // 로그인 성공 후에는 홈에 그대로 머물러야 함
+  // 사용자가 직접 원하는 페이지로 이동할 수 있음
 
   return (
     <Grid
