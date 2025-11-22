@@ -22,23 +22,20 @@ import { parseApiError } from "~/utils/error";
 import { uploadRoomSchema } from "~/utils/validation";
 import { requireHost } from "~/utils/auth";
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     // 호스트 권한 체크 (로그인 체크 포함)
     const user = await requireHost(request);
-
-    // request에서 쿠키를 가져와서 API 호출에 전달
-    const cookie = request.headers.get("Cookie");
 
     // 편의시설과 카테고리 데이터를 병렬로 가져오기
     try {
         const [amenities, categories] = await Promise.all([
-            getAmenities(cookie || undefined).catch((error) => {
+            getAmenities().catch((error) => {
                 if (import.meta.env.DEV) {
                     console.error("Failed to fetch amenities:", error);
                 }
                 return [];
             }),
-            getCategories(cookie || undefined).catch((error) => {
+            getCategories().catch((error) => {
                 if (import.meta.env.DEV) {
                     console.error("Failed to fetch categories:", error);
                 }
