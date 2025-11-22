@@ -85,7 +85,7 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
             // 쿠키가 설정될 시간을 확보한 후 사용자 정보 업데이트
             setTimeout(() => {
                 onSignUpSuccess?.();
-            }, 100);
+            }, 300);
         } catch (error) {
             const errorMessage = parseApiError(error, "회원가입에 실패했습니다. 다시 시도해주세요.");
 

@@ -100,8 +100,9 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     onLoginSuccess={async () => {
                         // 쿠키가 설정될 시간을 주기 위해 약간의 지연 후 페이지 리로드
                         setTimeout(() => {
+                            console.log("Reloading page after login success");
                             window.location.reload();
-                        }, 100);
+                        }, 300);
                     }} />
                 <SignUpModal
                     isOpen={signup.open}
@@ -109,8 +110,9 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     onSignUpSuccess={async () => {
                         // 쿠키가 설정될 시간을 주기 위해 약간의 지연 후 페이지 리로드
                         setTimeout(() => {
+                            console.log("Reloading page after signup success");
                             window.location.reload();
-                        }, 100);
+                        }, 300);
                     }} />
             </AppLayout>
         </Theme>
