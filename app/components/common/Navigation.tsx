@@ -1,5 +1,5 @@
 import { Avatar, Box, Button, Container, HStack, IconButton, Menu, Separator, Stack, Text, VStack } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
 import { FaMoon, FaSun } from "react-icons/fa";
 import type { IUser } from "~/types";
 
@@ -14,6 +14,7 @@ interface NavigationProps {
 }
 
 export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLogoutSuccess, appearance = "light", onToggleAppearance }: NavigationProps) {
+    const navigate = useNavigate();
     return (
         <Box as="header" borderBottomWidth="1px" bg="bg">
             <Container maxW="7xl" py={4} >
@@ -76,14 +77,12 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                         </Box>
                                         <Separator />
                                         {user?.is_host && (
-                                            <Menu.Item value="upload" asChild>
-                                                <RouterLink to="/rooms/upload" style={{ display: "block", width: "100%" }}>
-                                                    방 업로드
-                                                </RouterLink>
+                                            <Menu.Item value="upload" onClick={() => navigate("/rooms/upload")} cursor="pointer">
+                                                방 업로드
                                             </Menu.Item>
                                         )}
                                         <Separator />
-                                        <Menu.Item value="logout" onClick={onLogoutSuccess}>
+                                        <Menu.Item value="logout" onClick={onLogoutSuccess} cursor="pointer">
                                             Log out
                                         </Menu.Item>
                                     </Menu.Content>
