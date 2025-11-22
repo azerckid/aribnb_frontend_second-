@@ -1,77 +1,69 @@
-import { useState } from "react";
-import { Outlet, useRevalidator } from "react-router";
+import { useState, useEffect } from "react";
+import { Outlet } from "react-router";
 
 import type { Route } from "./+types/_app";
 
 import { Theme } from "@chakra-ui/react";
 import { useDisclosure } from "@chakra-ui/react";
-import { getMe } from "~/utils/api";
+import { getMe, logout } from "~/utils/api";
+import type { IUser } from "~/types";
+import { toaster } from "~/components/ui/toaster";
+import { Footer } from "../components/common/Footer";
 import { AppLayout } from "../components/common/AppLayout";
 import { Navigation } from "../components/common/Navigation";
 import { LoginModal } from "../components/common/LoginModal";
 import { SignUpModal } from "../components/common/SignUpModal";
-import { Footer } from "../components/common/Footer";
 
-export async function loader({ request }: Route.LoaderArgs) {
-    try {
-        // request에서 쿠키를 가져와서 API 호출에 전달
-        const cookie = request.headers.get("Cookie");
-        const user = await getMe(cookie || undefined);
-        return { user, isLoggedIn: true };
-    } catch (error) {
-        // 401/403은 정상적인 상황(로그인하지 않은 사용자)이므로 조용히 처리
-        // 개발 환경에서만 디버깅을 위해 로그 출력
-        if (import.meta.env.DEV) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            // UNAUTHORIZED 에러는 정상적인 상황이므로 간단히만 로그
-            if (errorMessage.includes("UNAUTHORIZED")) {
-                // 조용히 처리 (로그 제거)
-            } else {
-                console.log("Loader: Unexpected error", errorMessage);
-            }
-        }
-        return { user: null, isLoggedIn: false };
-    }
-}
+type Appearance = "light" | "dark";
 
-export default function AppRouteLayout({ loaderData }: Route.ComponentProps) {
+export default function AppRouteLayout({ }: Route.ComponentProps) {
     const login = useDisclosure();
     const signup = useDisclosure();
-    const revalidator = useRevalidator();
-    type Appearance = "light" | "dark";
+    const [user, setUser] = useState<IUser | null>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
     const [appearance, setAppearance] = useState<Appearance>("light");
     const toggleAppearance = () =>
         setAppearance((prev) => (prev === "dark" ? "light" : "dark"));
-    const onLogoutSuccess = async () => {
-        const { logout } = await import("~/utils/api");
-        const { toaster } = await import("~/components/ui/toaster");
 
+    // 클라이언트 사이드에서 사용자 정보 가져오기
+    useEffect(() => {
+        const checkUser = async () => {
+            try {
+                const currentUser = await getMe();
+                setUser(currentUser);
+                setIsLoggedIn(true);
+            } catch (error) {
+                // 401/403은 정상적인 상황 (로그인하지 않은 사용자)
+                setUser(null);
+                setIsLoggedIn(false);
+            }
+        };
+
+        checkUser();
+    }, []);
+
+    const onLogoutSuccess = async () => {
         const loadingToastId = toaster.create({
             title: "Logging out...",
             description: "please wait...",
             type: "loading",
-            duration: 10000, // 충분한 시간 확보
+            duration: 10000,
         });
 
         try {
             await logout();
-
-            // 로딩 토스트를 성공 토스트로 업데이트
             toaster.update(loadingToastId, {
                 title: "Logged out successfully",
                 description: "see you soon!",
                 type: "success",
                 duration: 2000,
             });
-
-            // 약간의 지연을 두고 revalidate (쿠키가 삭제될 시간을 줌)
-            setTimeout(() => {
-                revalidator.revalidate();
-            }, 200);
+            // 로그아웃 후 사용자 정보 초기화
+            setUser(null);
+            setIsLoggedIn(false);
         } catch (error) {
             console.error("Logout failed:", error);
-
-            // 로딩 토스트를 에러 토스트로 업데이트
             toaster.update(loadingToastId, {
                 title: "로그아웃 실패",
                 description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
@@ -86,8 +78,8 @@ export default function AppRouteLayout({ loaderData }: Route.ComponentProps) {
             <AppLayout
                 header={
                     <Navigation
-                        user={loaderData.user}
-                        isLoggedIn={loaderData.isLoggedIn}
+                        user={user}
+                        isLoggedIn={isLoggedIn}
                         onLoginClick={login.onOpen}
                         onSignUpClick={signup.onOpen}
                         onLogoutSuccess={onLogoutSuccess}
@@ -102,20 +94,33 @@ export default function AppRouteLayout({ loaderData }: Route.ComponentProps) {
                 <LoginModal
                     isOpen={login.open}
                     onClose={login.onClose}
-                    onLoginSuccess={() => {
-                        console.log("Revalidating after login...");
-                        // 약간의 지연을 두고 revalidate (쿠키가 설정될 시간을 줌)
-                        setTimeout(() => {
-                            revalidator.revalidate();
+                    onLoginSuccess={async () => {
+                        // 약간의 지연을 두고 사용자 정보 확인 (쿠키가 설정될 시간을 줌)
+                        setTimeout(async () => {
+                            try {
+                                const currentUser = await getMe();
+                                setUser(currentUser);
+                                setIsLoggedIn(true);
+                            } catch (error) {
+                                setUser(null);
+                                setIsLoggedIn(false);
+                            }
                         }, 200);
                     }} />
                 <SignUpModal
                     isOpen={signup.open}
                     onClose={signup.onClose}
-                    onSignUpSuccess={() => {
-                        console.log("Revalidating after signup...");
-                        setTimeout(() => {
-                            revalidator.revalidate();
+                    onSignUpSuccess={async () => {
+                        // 약간의 지연을 두고 사용자 정보 확인 (쿠키가 설정될 시간을 줌)
+                        setTimeout(async () => {
+                            try {
+                                const currentUser = await getMe();
+                                setUser(currentUser);
+                                setIsLoggedIn(true);
+                            } catch (error) {
+                                setUser(null);
+                                setIsLoggedIn(false);
+                            }
                         }, 200);
                     }} />
             </AppLayout>
