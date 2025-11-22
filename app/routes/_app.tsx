@@ -98,39 +98,37 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     isOpen={login.open}
                     onClose={login.onClose}
                     onLoginSuccess={async () => {
-                        // 약간의 지연을 두고 사용자 정보 확인 (쿠키가 설정될 시간을 줌)
+                        // 쿠키가 설정될 시간을 주기 위해 약간의 지연
                         setTimeout(async () => {
                             try {
                                 const currentUser = await getMe();
+                                // 상태를 즉시 업데이트하여 Navigation이 리렌더링되도록 함
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
-                                // revalidate를 호출하여 Navigation 컴포넌트가 즉시 업데이트되도록 함
-                                revalidator.revalidate();
                                 // 로그인 성공 후 홈에 그대로 머물러야 함
                             } catch (error) {
                                 setUser(null);
                                 setIsLoggedIn(false);
                             }
-                        }, 200);
+                        }, 100);
                     }} />
                 <SignUpModal
                     isOpen={signup.open}
                     onClose={signup.onClose}
                     onSignUpSuccess={async () => {
-                        // 약간의 지연을 두고 사용자 정보 확인 (쿠키가 설정될 시간을 줌)
+                        // 쿠키가 설정될 시간을 주기 위해 약간의 지연
                         setTimeout(async () => {
                             try {
                                 const currentUser = await getMe();
+                                // 상태를 즉시 업데이트하여 Navigation이 리렌더링되도록 함
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
-                                // revalidate를 호출하여 Navigation 컴포넌트가 즉시 업데이트되도록 함
-                                revalidator.revalidate();
                                 // 회원가입 성공 후 홈에 그대로 머물러야 함
                             } catch (error) {
                                 setUser(null);
                                 setIsLoggedIn(false);
                             }
-                        }, 200);
+                        }, 100);
                     }} />
             </AppLayout>
         </Theme>

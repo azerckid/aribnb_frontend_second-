@@ -59,19 +59,17 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
             // 모달 먼저 닫기
             onClose();
 
-            // 모달이 완전히 닫힌 후 토스트 생성 (모달의 DOM 변경이 토스트에 영향을 주지 않도록)
-            setTimeout(() => {
-                toaster.create({
-                    title: "로그인 성공",
-                    type: "success",
-                    duration: 5000,
-                });
+            // 토스트 생성
+            toaster.create({
+                title: "로그인 성공",
+                type: "success",
+                duration: 5000,
+            });
 
-                // 충분한 지연 후 revalidate (토스트가 보이도록, 쿠키가 설정될 시간도 확보)
-                setTimeout(() => {
-                    onLoginSuccess?.();
-                }, 500);
-            }, 200);
+            // 쿠키가 설정될 시간을 확보한 후 사용자 정보 업데이트
+            setTimeout(() => {
+                onLoginSuccess?.();
+            }, 100);
         } catch (error) {
             const errorMessage = parseApiError(error, "로그인에 실패했습니다. 다시 시도해주세요.");
 
