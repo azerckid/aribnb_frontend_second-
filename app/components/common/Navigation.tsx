@@ -77,7 +77,7 @@ export function Navigation({ user, isLoggedIn, onLoginClick, onSignUpClick, onLo
                                         <Separator />
                                         {user?.is_host && (
                                             <Menu.Item value="upload" asChild>
-                                                <RouterLink to="/rooms/upload">
+                                                <RouterLink to="/rooms/upload" style={{ display: "block", width: "100%" }}>
                                                     방 업로드
                                                 </RouterLink>
                                             </Menu.Item>
