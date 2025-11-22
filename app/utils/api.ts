@@ -587,7 +587,7 @@ export async function updateRoom(
  * @throws {Error} API 호출 실패 시 에러
  */
 export async function getAmenities(cookie?: string): Promise<IAmenity[]> {
-    return apiGet<IAmenity[]>("/rooms/amenities", cookie ? { cookie } : undefined);
+    return apiGet<IAmenity[]>("/rooms/amenities/", cookie ? { cookie } : undefined);
 }
 
 /**
@@ -597,7 +597,7 @@ export async function getAmenities(cookie?: string): Promise<IAmenity[]> {
  * @throws {Error} API 호출 실패 시 에러
  */
 export async function getCategories(cookie?: string): Promise<ICategory[]> {
-    return apiGet<ICategory[]>("/categories", cookie ? { cookie } : undefined);
+    return apiGet<ICategory[]>("/categories/", cookie ? { cookie } : undefined);
 }
 
 /**

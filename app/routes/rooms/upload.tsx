@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect } from "react";
 import { FaBed, FaDollarSign, FaToilet } from "react-icons/fa";
-import type { ICategory } from "~/types";
+import type { IAmenity, ICategory } from "~/types";
 import { toaster } from "~/components/ui/toaster";
 import { getAmenities, getCategories, uploadRoom } from "~/utils/api";
 import { parseApiError } from "~/utils/error";
@@ -152,8 +152,12 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
             ? ((categories as { results: ICategory[] }).results)
             : [];
 
-    // amenities가 배열인지 확인하고, 아니면 빈 배열로 처리
-    const amenitiesArray = Array.isArray(amenities) ? amenities : [];
+    // amenities가 배열인지 확인하고, 아니면 빈 배열로 처리 (pagination 대응)
+    const amenitiesArray = Array.isArray(amenities)
+        ? amenities
+        : amenities && typeof amenities === "object" && "results" in amenities
+            ? ((amenities as { results: IAmenity[] }).results)
+            : [];
 
     return (
         <Box pb={40} mt={10} px={{ base: 10, lg: 40 }}>
