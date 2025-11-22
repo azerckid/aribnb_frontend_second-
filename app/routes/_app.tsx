@@ -44,7 +44,7 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
         };
 
         checkUser();
-    }, []);
+    }, [isLoggedIn, user]);
 
     const onLogoutSuccess = async () => {
         const loadingToastId = toaster.create({
@@ -98,21 +98,13 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                     isOpen={login.open}
                     onClose={login.onClose}
                     onLoginSuccess={async () => {
-                        // 쿠키가 설정될 시간을 주기 위해 약간의 지연 후 페이지 리로드
-                        setTimeout(() => {
-                            console.log("Reloading page after login success");
-                            window.location.reload();
-                        }, 300);
+                        // LoginModal에서 직접 리로드하므로 여기서는 아무것도 하지 않음
                     }} />
                 <SignUpModal
                     isOpen={signup.open}
                     onClose={signup.onClose}
                     onSignUpSuccess={async () => {
-                        // 쿠키가 설정될 시간을 주기 위해 약간의 지연 후 페이지 리로드
-                        setTimeout(() => {
-                            console.log("Reloading page after signup success");
-                            window.location.reload();
-                        }, 300);
+                        // SignUpModal에서 직접 리로드하므로 여기서는 아무것도 하지 않음
                     }} />
             </AppLayout>
         </Theme>

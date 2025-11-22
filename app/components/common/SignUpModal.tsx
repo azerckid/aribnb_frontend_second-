@@ -82,10 +82,14 @@ export function SignUpModal({ isOpen, onClose, onSignUpSuccess }: SignUpModalPro
                 duration: 5000,
             });
 
-            // 쿠키가 설정될 시간을 확보한 후 사용자 정보 업데이트
+            // onSignUpSuccess 호출
+            onSignUpSuccess?.();
+
+            // 쿠키가 설정될 시간을 확보한 후 페이지 리로드
             setTimeout(() => {
-                onSignUpSuccess?.();
-            }, 300);
+                console.log("Reloading page after signup");
+                window.location.reload();
+            }, 500);
         } catch (error) {
             const errorMessage = parseApiError(error, "회원가입에 실패했습니다. 다시 시도해주세요.");
 
