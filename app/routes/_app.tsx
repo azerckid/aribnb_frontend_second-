@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet, useNavigate, useSearchParams } from "react-router";
+import { Outlet, useNavigate, useSearchParams, useRevalidator } from "react-router";
 
 import type { Route } from "./+types/_app";
 
@@ -20,6 +20,7 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
     const login = useDisclosure();
     const signup = useDisclosure();
     const navigate = useNavigate();
+    const revalidator = useRevalidator();
     const [searchParams] = useSearchParams();
     const [user, setUser] = useState<IUser | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -103,6 +104,8 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 const currentUser = await getMe();
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
+                                // revalidate를 호출하여 Navigation 컴포넌트가 즉시 업데이트되도록 함
+                                revalidator.revalidate();
                                 // 로그인 성공 후 홈에 그대로 머물러야 함
                             } catch (error) {
                                 setUser(null);
@@ -120,6 +123,8 @@ export default function AppRouteLayout({ }: Route.ComponentProps) {
                                 const currentUser = await getMe();
                                 setUser(currentUser);
                                 setIsLoggedIn(true);
+                                // revalidate를 호출하여 Navigation 컴포넌트가 즉시 업데이트되도록 함
+                                revalidator.revalidate();
                                 // 회원가입 성공 후 홈에 그대로 머물러야 함
                             } catch (error) {
                                 setUser(null);
