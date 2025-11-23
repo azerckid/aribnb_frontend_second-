@@ -1,5 +1,5 @@
 import { Avatar, Box, Button, Container, Grid, HStack, Heading, IconButton, Text, Textarea, VStack } from "@chakra-ui/react";
-import { FaStar, FaRegStar } from "react-icons/fa";
+import { FaStar, FaRegStar, FaReply } from "react-icons/fa";
 import type { IReview } from "~/types";
 import {
     DialogBackdrop,
@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useRevalidator } from "react-router";
-import { createReview } from "~/utils/api";
+import { createReview, createReviewReply } from "~/utils/api";
 import { toaster } from "~/components/ui/toaster";
 
 interface RoomReviewsProps {
@@ -31,7 +31,46 @@ export function RoomReviews({ reviews, rating, roomPk, isOwner }: RoomReviewsPro
     const [reviewText, setReviewText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
+    const [replyingTo, setReplyingTo] = useState<number | null>(null);
+    const [replyText, setReplyText] = useState("");
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
     const revalidator = useRevalidator();
+
+    const handleReplySubmit = async (reviewPk: number) => {
+        if (!roomPk) return;
+        if (!replyText.trim()) {
+            toaster.create({
+                title: "Reply text is required",
+                type: "error",
+            });
+            return;
+        }
+
+        setIsSubmittingReply(true);
+        try {
+            await createReviewReply(roomPk, reviewPk, replyText);
+            toaster.create({
+                title: "Reply submitted!",
+                description: "Your reply has been added.",
+                type: "success",
+            });
+            setReplyingTo(null);
+            setReplyText("");
+            revalidator.revalidate();
+        } catch (error: any) {
+            let message = "Failed to submit reply.";
+            if (error.message.includes("UNAUTHORIZED")) {
+                message = "Please log in to reply.";
+            }
+            toaster.create({
+                title: "Error",
+                description: message,
+                type: "error",
+            });
+        } finally {
+            setIsSubmittingReply(false);
+        }
+    };
 
     const handleSubmit = async () => {
         if (!roomPk) return;
@@ -159,8 +198,8 @@ export function RoomReviews({ reviews, rating, roomPk, isOwner }: RoomReviewsPro
                                 gap={{ base: 6, md: 10 }}
                             >
                                 {reviews.map((review, index) => (
-                                    <VStack key={index} alignItems="flex-start" gap={3}>
-                                        <HStack gap={3} alignItems="flex-start">
+                                    <VStack key={index} alignItems="flex-start" gap={3} w="100%">
+                                        <HStack gap={3} alignItems="flex-start" w="100%">
                                             <Avatar.Root size="md">
                                                 <Avatar.Image src={review.user.avatar} alt={review.user.name || review.user.username} />
                                                 <Avatar.Fallback name={review.user.name || review.user.username} />
@@ -185,10 +224,99 @@ export function RoomReviews({ reviews, rating, roomPk, isOwner }: RoomReviewsPro
                                                     )}
                                                 </HStack>
                                             </VStack>
+                                            {review.pk && (
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        if (review.pk !== undefined) {
+                                                            if (replyingTo === review.pk) {
+                                                                setReplyingTo(null);
+                                                                setReplyText("");
+                                                            } else {
+                                                                setReplyingTo(review.pk);
+                                                                setReplyText("");
+                                                            }
+                                                        }
+                                                    }}
+                                                    aria-label="Reply to review"
+                                                >
+                                                    <FaReply />
+                                                </IconButton>
+                                            )}
                                         </HStack>
                                         <Text fontSize="sm" color="gray.600" lineHeight="tall">
                                             {review.payload}
                                         </Text>
+
+                                        {/* Display existing reply */}
+                                        {review.reply && (
+                                            <Box
+                                                w="100%"
+                                                pl={4}
+                                                borderLeftWidth="2px"
+                                                borderLeftColor="gray.300"
+                                                mt={2}
+                                            >
+                                                <VStack alignItems="flex-start" gap={2}>
+                                                    <HStack gap={2}>
+                                                        <Avatar.Root size="sm">
+                                                            <Avatar.Image src={review.reply_user?.avatar} alt={review.reply_user?.name || review.reply_user?.username} />
+                                                            <Avatar.Fallback name={review.reply_user?.name || review.reply_user?.username} />
+                                                        </Avatar.Root>
+                                                        <VStack alignItems="flex-start" gap={0}>
+                                                            <Text fontWeight="semibold" fontSize="sm">
+                                                                {review.reply_user?.name || review.reply_user?.username}
+                                                            </Text>
+                                                            {review.reply_created_at && (
+                                                                <Text fontSize="xs" color="gray.500">
+                                                                    {new Date(review.reply_created_at).toLocaleDateString("en-US", {
+                                                                        month: "short",
+                                                                        year: "numeric",
+                                                                    })}
+                                                                </Text>
+                                                            )}
+                                                        </VStack>
+                                                    </HStack>
+                                                    <Text fontSize="sm" color="gray.600">
+                                                        {review.reply}
+                                                    </Text>
+                                                </VStack>
+                                            </Box>
+                                        )}
+
+                                        {/* Reply form */}
+                                        {replyingTo === review.pk && (
+                                            <VStack w="100%" gap={2} mt={2}>
+                                                <Textarea
+                                                    placeholder="Write your reply..."
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    rows={3}
+                                                    size="sm"
+                                                />
+                                                <HStack gap={2} w="100%" justifyContent="flex-end">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setReplyingTo(null);
+                                                            setReplyText("");
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        colorPalette="red"
+                                                        onClick={() => review.pk && handleReplySubmit(review.pk)}
+                                                        loading={isSubmittingReply}
+                                                    >
+                                                        Submit Reply
+                                                    </Button>
+                                                </HStack>
+                                            </VStack>
+                                        )}
                                     </VStack>
                                 ))}
                             </Grid>

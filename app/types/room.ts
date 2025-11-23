@@ -23,11 +23,15 @@ export interface ICategory {
 }
 
 export interface IReview {
+    pk?: number;
     user: IOwner;
     payload: string;
     rating: number;
     created_at?: string;
     updated_at?: string;
+    reply?: string;
+    reply_user?: IOwner;
+    reply_created_at?: string;
 }
 
 export interface IRoom {

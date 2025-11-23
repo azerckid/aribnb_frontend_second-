@@ -175,6 +175,44 @@ export async function createReview(
 }
 
 /**
+ * 리뷰에 답글을 작성합니다.
+ * @param roomPk 방의 고유 식별자 (숫자 또는 문자열)
+ * @param reviewPk 리뷰의 고유 식별자 (숫자 또는 문자열)
+ * @param replyText 답글 내용
+ * @returns 업데이트된 리뷰 객체
+ * @throws {Error} 답글 작성 실패 시 에러
+ */
+export async function createReviewReply(
+    roomPk: number | string,
+    reviewPk: number | string,
+    replyText: string
+): Promise<IReview> {
+    const url = `${API_BASE_URL}/rooms/${roomPk}/reviews/${reviewPk}/reply`;
+    const csrfToken = getCsrfToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+    }
+
+    const res = await fetch(url, {
+        method: "PUT",
+        credentials: "include",
+        headers: headers as HeadersInit,
+        body: JSON.stringify({ reply: replyText }),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 401 || res.status === 403) {
+            throw new Error(`UNAUTHORIZED: ${text}`);
+        }
+        throw new Error(`Reply creation failed: ${text}`);
+    }
+
+    return res.json() as Promise<IReview>;
+}
+
+/**
  * 예약 가능 여부 확인 응답 타입
  */
 export interface CheckBookingResponse {
