@@ -52,14 +52,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 }
 
 export async function clientAction({ request }: Route.ClientActionArgs) {
-    if (import.meta.env.DEV) console.log("Starting clientAction");
-
     // 호스트 권한 체크
     try {
         const user = await requireHost(request);
-        if (import.meta.env.DEV) console.log("User authenticated:", user);
     } catch (error) {
-        if (import.meta.env.DEV) console.error("requireHost failed:", error);
         throw error; // 리다이렉트는 여기서 던져짐
     }
 

@@ -26,11 +26,11 @@ export function meta({ data }: Route.MetaArgs) {
     ];
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     try {
-        const cookie = request.headers.get("Cookie");
+        // clientLoader에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
         const [room, reviews] = await Promise.all([
-            getRoom(params.roomPk, cookie || undefined),
+            getRoom(params.roomPk),
             getRoomReviews(params.roomPk).catch(() => []), // 리뷰가 없어도 에러가 나지 않도록
         ]);
         return { room, reviews };
@@ -40,15 +40,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     }
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function clientAction({ request, params }: Route.ClientActionArgs) {
     const roomPk = params.roomPk;
     if (!roomPk) {
         return { error: "Room ID is required" };
     }
 
     try {
+        // clientAction에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
+        // requireHost 내부에서도 브라우저 환경을 감지하여 쿠키 추출을 건너뜀
         const user = await requireHost(request);
-        const cookie = request.headers.get("Cookie");
         const formData = await request.formData();
         const intent = formData.get("intent") as string;
 
@@ -60,7 +61,7 @@ export async function action({ request, params }: Route.ActionArgs) {
                 return { error: "Please select a valid image file" };
             }
 
-            await uploadRoomPhoto(Number(roomPk), file, description, cookie || undefined);
+            await uploadRoomPhoto(Number(roomPk), file, description);
             return { success: true, action: "upload", message: "Photo uploaded successfully" };
         } else if (intent === "delete") {
             const photoPk = formData.get("photoPk") as string;
@@ -68,7 +69,7 @@ export async function action({ request, params }: Route.ActionArgs) {
                 return { error: "Photo ID is required" };
             }
 
-            await deleteRoomPhoto(photoPk, cookie || undefined);
+            await deleteRoomPhoto(photoPk);
             return { success: true, action: "delete", message: "Photo deleted successfully" };
         }
 
@@ -85,7 +86,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function RoomDetail({ loaderData }: Route.ComponentProps) {
     const { room, reviews } = loaderData;
     const navigation = useNavigation();
-    const actionData = useActionData<typeof action>();
+    const actionData = useActionData<typeof clientAction>();
     const revalidator = useRevalidator();
     const isLoading = navigation.state === "loading";
     const [showUploadForm, setShowUploadForm] = useState(false);
