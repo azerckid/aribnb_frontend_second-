@@ -606,47 +606,44 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
  */
 export async function fetchCsrfToken(): Promise<string | null> {
     try {
-        // 1. 먼저 /admin/ (대시보드) 접근 시도 (로그인 된 경우)
-        let res = await fetch(`${API_BASE_URL}/admin/`, {
+        const fetchOptions: RequestInit = {
             credentials: "include",
-        });
+            cache: "no-store",
+        };
 
-        // 리다이렉트 되었다면 (로그인 안된 경우 /admin/login/으로 감)
-        // fetch는 기본적으로 리다이렉트를 따름
+        // 시도할 URL 목록 (로그인 여부와 상관없이 폼이 있는 페이지들)
+        const urls = [
+            `${API_BASE_URL}/admin/password_reset/`, // 공개된 비밀번호 재설정 페이지
+            `${API_BASE_URL}/admin/login/`,           // 로그인 페이지
+            `${API_BASE_URL}/admin/`,                 // 대시보드 (로그인 시)
+        ];
 
-        let text = await res.text();
-        let match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+        for (const url of urls) {
+            try {
+                const res = await fetch(url, fetchOptions);
+                const text = await res.text();
 
-        if (import.meta.env.DEV) {
-            console.log("fetchCsrfToken /admin/ attempt:", {
-                url: res.url,
-                status: res.status,
-                hasMatch: !!match,
-                match: match ? match[1] : null
-            });
-        }
+                // 정규식 개선: 속성 순서 상관없이 매칭 시도 (name이 먼저 나오거나 value가 먼저 나오거나)
+                // <input ... name="csrfmiddlewaretoken" ... value="..." ...>
+                const matchNameFirst = text.match(/name=["']csrfmiddlewaretoken["'][^>]*value=["']([^"']+)["']/);
+                const matchValueFirst = text.match(/value=["']([^"']+)["'][^>]*name=["']csrfmiddlewaretoken["']/);
+                const match = matchNameFirst || matchValueFirst;
 
-        if (match) return match[1];
+                if (import.meta.env.DEV) {
+                    console.log(`fetchCsrfToken attempt ${url}:`, {
+                        status: res.status,
+                        hasMatch: !!match,
+                        match: match ? match[1] : null
+                    });
+                }
 
-        // 2. 실패 시 /admin/login/ 직접 시도 (혹시 리다이렉트 안된 경우)
-        if (!res.url.includes("login")) {
-            res = await fetch(`${API_BASE_URL}/admin/login/`, {
-                credentials: "include",
-            });
-            text = await res.text();
-            match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
-
-            if (import.meta.env.DEV) {
-                console.log("fetchCsrfToken /admin/login/ attempt:", {
-                    url: res.url,
-                    status: res.status,
-                    hasMatch: !!match,
-                    match: match ? match[1] : null
-                });
+                if (match) return match[1];
+            } catch (e) {
+                if (import.meta.env.DEV) console.error(`Failed to fetch ${url}`, e);
             }
         }
 
-        return match ? match[1] : null;
+        return null;
     } catch (error) {
         if (import.meta.env.DEV) {
             console.error("Failed to fetch CSRF token fallback:", error);
@@ -679,9 +676,16 @@ export async function uploadRoomPhoto(
         csrfToken = await fetchCsrfToken();
     }
 
+    if (!csrfToken) {
+        // 토큰을 찾을 수 없으면 에러 발생 (사용자에게 알림)
+        throw new Error("Security token not found. Please refresh the page or try logging in again.");
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("description", description);
+    // Django는 FormData의 경우 필드로도 CSRF 토큰을 받음
+    formData.append("csrfmiddlewaretoken", csrfToken);
 
     // FormData를 보낼 때는 Content-Type을 설정하지 않음 (브라우저가 자동으로 boundary 포함하여 설정)
     const headers: Record<string, string> = {};
