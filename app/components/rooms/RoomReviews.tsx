@@ -1,24 +1,147 @@
-import { Avatar, Box, Container, Grid, HStack, Heading, Text, VStack } from "@chakra-ui/react";
-import { FaStar } from "react-icons/fa";
+import { Avatar, Box, Button, Container, Grid, HStack, Heading, IconButton, Text, Textarea, VStack } from "@chakra-ui/react";
+import { FaStar, FaRegStar } from "react-icons/fa";
 import type { IReview } from "~/types";
+import {
+    DialogBackdrop,
+    DialogBody,
+    DialogCloseTrigger,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogRoot,
+    DialogTitle,
+    DialogTrigger,
+    DialogPositioner,
+} from "@chakra-ui/react";
+import { useState } from "react";
+import { useRevalidator } from "react-router";
+import { createReview } from "~/utils/api";
+import { toaster } from "~/components/ui/toaster";
 
 interface RoomReviewsProps {
     reviews: IReview[];
     rating: number;
+    roomPk?: number | string;
+    isOwner?: boolean;
 }
 
-export function RoomReviews({ reviews, rating }: RoomReviewsProps) {
+export function RoomReviews({ reviews, rating, roomPk, isOwner }: RoomReviewsProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewText, setReviewText] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [hoverRating, setHoverRating] = useState(0);
+    const revalidator = useRevalidator();
+
+    const handleSubmit = async () => {
+        if (!roomPk) return;
+        if (!reviewText.trim()) {
+            toaster.create({
+                title: "Review text is required",
+                type: "error",
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await createReview(roomPk, { payload: reviewText, rating: reviewRating });
+            toaster.create({
+                title: "Review submitted!",
+                description: "Thank you for your feedback.",
+                type: "success",
+            });
+            setIsOpen(false);
+            setReviewText("");
+            setReviewRating(5);
+            revalidator.revalidate();
+        } catch (error: any) {
+            let message = "Failed to submit review.";
+            if (error.message.includes("UNAUTHORIZED")) {
+                message = "Please log in to write a review.";
+            }
+            toaster.create({
+                title: "Error",
+                description: message,
+                type: "error",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <Box mt={{ base: 6, md: 10 }}>
-            <Heading fontSize={{ base: "xl", md: "2xl" }} mb={5}>
-                <HStack gap={2} flexWrap="wrap">
-                    <FaStar /> <Text>{rating}</Text>
-                    <Text>∙</Text>
-                    <Text>
-                        {reviews.length} review{reviews.length === 1 ? "" : "s"}
-                    </Text>
-                </HStack>
-            </Heading>
+            <HStack justifyContent="space-between" mb={5} alignItems="center">
+                <Heading fontSize={{ base: "xl", md: "2xl" }}>
+                    <HStack gap={2} flexWrap="wrap">
+                        <FaStar /> <Text>{rating}</Text>
+                        <Text>∙</Text>
+                        <Text>
+                            {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                        </Text>
+                    </HStack>
+                </Heading>
+                {roomPk && !isOwner && (
+                    <DialogRoot open={isOpen} onOpenChange={(e) => setIsOpen(e.open)}>
+                        <DialogTrigger asChild>
+                            <Button colorPalette="red" variant="solid">
+                                Write a Review
+                            </Button>
+                        </DialogTrigger>
+                        <DialogBackdrop />
+                        <DialogPositioner>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Write a Review</DialogTitle>
+                                </DialogHeader>
+                                <DialogBody>
+                                    <VStack gap={4} alignItems="stretch">
+                                        <VStack alignItems="flex-start" gap={2}>
+                                            <Text fontWeight="medium">Rating</Text>
+                                            <HStack gap={1}>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <IconButton
+                                                        key={star}
+                                                        variant="ghost"
+                                                        colorPalette="yellow"
+                                                        size="sm"
+                                                        onMouseEnter={() => setHoverRating(star)}
+                                                        onMouseLeave={() => setHoverRating(0)}
+                                                        onClick={() => setReviewRating(star)}
+                                                        aria-label={`${star} stars`}
+                                                    >
+                                                        {star <= (hoverRating || reviewRating) ? (
+                                                            <FaStar size={20} />
+                                                        ) : (
+                                                            <FaRegStar size={20} />
+                                                        )}
+                                                    </IconButton>
+                                                ))}
+                                            </HStack>
+                                        </VStack>
+                                        <Textarea
+                                            placeholder="Write your review here..."
+                                            value={reviewText}
+                                            onChange={(e) => setReviewText(e.target.value)}
+                                            rows={5}
+                                        />
+                                    </VStack>
+                                </DialogBody>
+                                <DialogFooter>
+                                    <Button variant="outline" onClick={() => setIsOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button colorPalette="red" onClick={handleSubmit} loading={isSubmitting}>
+                                        Submit Review
+                                    </Button>
+                                </DialogFooter>
+                                <DialogCloseTrigger />
+                            </DialogContent>
+                        </DialogPositioner>
+                    </DialogRoot>
+                )}
+            </HStack>
 
             <Grid
                 templateColumns={{
@@ -28,11 +151,11 @@ export function RoomReviews({ reviews, rating }: RoomReviewsProps) {
                 gap={{ base: 6, md: 10 }}
                 mt={{ base: 8, md: 16 }}
             >
-                {reviews.length > 0 && (
-                    <Box>
+                {reviews.length > 0 ? (
+                    <Box gridColumn={{ md: "span 2" }}>
                         <Container maxW="container.lg" mx="0" px={{ base: 0, md: 4 }}>
                             <Grid
-                                templateColumns="1fr"
+                                templateColumns={{ base: "1fr", md: "1fr 1fr" }}
                                 gap={{ base: 6, md: 10 }}
                             >
                                 {reviews.map((review, index) => (
@@ -71,6 +194,8 @@ export function RoomReviews({ reviews, rating }: RoomReviewsProps) {
                             </Grid>
                         </Container>
                     </Box>
+                ) : (
+                    <Text color="gray.500">No reviews yet.</Text>
                 )}
             </Grid>
         </Box>

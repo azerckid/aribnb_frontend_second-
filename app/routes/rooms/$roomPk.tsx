@@ -225,7 +225,7 @@ export default function RoomDetail({ loaderData }: Route.ComponentProps) {
                 gap={{ base: 6, md: 10 }}
                 mt={{ base: 8, md: 16 }}
             >
-                <RoomReviews reviews={reviews} rating={room.rating} />
+                <RoomReviews reviews={reviews} rating={room.rating} roomPk={room.pk} isOwner={room.is_owner} />
                 {room.pk && <RoomBookingCalendar roomPk={room.pk} />}
             </Grid>
         </Box>
