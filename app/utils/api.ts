@@ -566,6 +566,7 @@ export async function updateRoom(
         const text = await res.text();
         if (import.meta.env.DEV) {
             console.error("Update room API error:", {
+                url,
                 status: res.status,
                 statusText: res.statusText,
                 response: text,
@@ -574,7 +575,7 @@ export async function updateRoom(
         if (res.status === 401 || res.status === 403) {
             throw new Error(`UNAUTHORIZED: ${text}`);
         }
-        throw new Error(`Room update failed: ${text}`);
+        throw new Error(`Room update failed (${res.status}): ${text}`);
     }
 
     return res.json() as Promise<IRoom>;
