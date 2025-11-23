@@ -607,7 +607,10 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
 export async function fetchCsrfToken(): Promise<string | null> {
     try {
         // admin 로그인 페이지에는 항상 CSRF 토큰이 포함되어 있음
-        const res = await fetch(`${API_BASE_URL}/admin/login/`);
+        // credentials: "include"를 설정하여 현재 사용자의 쿠키(세션)에 맞는 토큰을 가져와야 함
+        const res = await fetch(`${API_BASE_URL}/admin/login/`, {
+            credentials: "include",
+        });
         const text = await res.text();
         // <input type="hidden" name="csrfmiddlewaretoken" value="..."> 패턴 찾기
         const match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
