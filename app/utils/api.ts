@@ -34,15 +34,7 @@ export function getCsrfToken(cookieString?: string | null): string | null {
 
     // 브라우저 환경에서 document.cookie 사용
     if (typeof document !== "undefined") {
-        const token = getCookieFromString(document.cookie, "csrftoken");
-        if (import.meta.env.DEV || true) { // Force log in prod for debugging
-            console.log("getCsrfToken:", {
-                cookieLength: document.cookie.length,
-                hasToken: !!token,
-                token: token ? token.substring(0, 5) + "..." : "null"
-            });
-        }
-        return token;
+        return getCookieFromString(document.cookie, "csrftoken");
     }
 
     return null;
@@ -609,6 +601,26 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
 }
 
 /**
+ * 백엔드에서 CSRF 토큰을 직접 가져옵니다.
+ * 쿠키에 토큰이 없는 경우(크로스 도메인 등)에 사용합니다.
+ */
+export async function fetchCsrfToken(): Promise<string | null> {
+    try {
+        // admin 로그인 페이지에는 항상 CSRF 토큰이 포함되어 있음
+        const res = await fetch(`${API_BASE_URL}/admin/login/`);
+        const text = await res.text();
+        // <input type="hidden" name="csrfmiddlewaretoken" value="..."> 패턴 찾기
+        const match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+        return match ? match[1] : null;
+    } catch (error) {
+        if (import.meta.env.DEV) {
+            console.error("Failed to fetch CSRF token fallback:", error);
+        }
+        return null;
+    }
+}
+
+/**
  * 방에 사진을 업로드합니다.
  * @param roomPk 방 ID
  * @param file 업로드할 이미지 파일
@@ -624,7 +636,13 @@ export async function uploadRoomPhoto(
     cookie?: string
 ): Promise<IPhoto> {
     const url = `${API_BASE_URL}/rooms/${roomPk}/photos`;
-    const csrfToken = getCsrfToken(cookie);
+    let csrfToken = getCsrfToken(cookie);
+
+    // 토큰이 없고 브라우저 환경이면 직접 fetch 시도
+    if (!csrfToken && typeof document !== "undefined") {
+        if (import.meta.env.DEV) console.log("CSRF token missing in cookie, fetching from backend...");
+        csrfToken = await fetchCsrfToken();
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -693,7 +711,12 @@ export async function deleteRoomPhoto(
     cookie?: string
 ): Promise<void> {
     const url = `${API_BASE_URL}/medias/photos/${photoPk}`;
-    const csrfToken = getCsrfToken(cookie);
+    let csrfToken = getCsrfToken(cookie);
+
+    // 토큰이 없고 브라우저 환경이면 직접 fetch 시도
+    if (!csrfToken && typeof document !== "undefined") {
+        csrfToken = await fetchCsrfToken();
+    }
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
