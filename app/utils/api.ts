@@ -34,7 +34,15 @@ export function getCsrfToken(cookieString?: string | null): string | null {
 
     // 브라우저 환경에서 document.cookie 사용
     if (typeof document !== "undefined") {
-        return getCookieFromString(document.cookie, "csrftoken");
+        const token = getCookieFromString(document.cookie, "csrftoken");
+        if (import.meta.env.DEV || true) { // Force log in prod for debugging
+            console.log("getCsrfToken:", {
+                cookieLength: document.cookie.length,
+                hasToken: !!token,
+                token: token ? token.substring(0, 5) + "..." : "null"
+            });
+        }
+        return token;
     }
 
     return null;
