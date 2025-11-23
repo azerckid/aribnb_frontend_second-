@@ -606,27 +606,44 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
  */
 export async function fetchCsrfToken(): Promise<string | null> {
     try {
-        // admin 로그인 페이지에는 항상 CSRF 토큰이 포함되어 있음
-        // credentials: "include"를 설정하여 현재 사용자의 쿠키(세션)에 맞는 토큰을 가져와야 함
-        const res = await fetch(`${API_BASE_URL}/admin/login/`, {
+        // 1. 먼저 /admin/ (대시보드) 접근 시도 (로그인 된 경우)
+        let res = await fetch(`${API_BASE_URL}/admin/`, {
             credentials: "include",
         });
-        const text = await res.text();
+
+        // 리다이렉트 되었다면 (로그인 안된 경우 /admin/login/으로 감)
+        // fetch는 기본적으로 리다이렉트를 따름
+
+        let text = await res.text();
+        let match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
 
         if (import.meta.env.DEV) {
-            console.log("fetchCsrfToken response:", {
-                status: res.status,
+            console.log("fetchCsrfToken /admin/ attempt:", {
                 url: res.url,
-                textLength: text.length,
-                preview: text.substring(0, 500) // Log beginning to see if it's login page or dashboard
+                status: res.status,
+                hasMatch: !!match,
+                match: match ? match[1] : null
             });
         }
 
-        // <input type="hidden" name="csrfmiddlewaretoken" value="..."> 패턴 찾기
-        const match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+        if (match) return match[1];
 
-        if (import.meta.env.DEV) {
-            console.log("fetchCsrfToken match:", match ? match[1] : "null");
+        // 2. 실패 시 /admin/login/ 직접 시도 (혹시 리다이렉트 안된 경우)
+        if (!res.url.includes("login")) {
+            res = await fetch(`${API_BASE_URL}/admin/login/`, {
+                credentials: "include",
+            });
+            text = await res.text();
+            match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+
+            if (import.meta.env.DEV) {
+                console.log("fetchCsrfToken /admin/login/ attempt:", {
+                    url: res.url,
+                    status: res.status,
+                    hasMatch: !!match,
+                    match: match ? match[1] : null
+                });
+            }
         }
 
         return match ? match[1] : null;
