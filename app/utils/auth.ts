@@ -9,7 +9,11 @@ import type { IUser } from "~/types";
  */
 export async function getUserFromRequest(request: Request): Promise<IUser | null> {
     try {
-        const cookie = request.headers.get("Cookie");
+        // 브라우저 환경에서는 쿠키를 직접 추출할 필요 없음 (자동 전송)
+        // 서버 사이드 렌더링 시에만 request 헤더에서 쿠키 추출
+        const isServer = typeof document === "undefined";
+        const cookie = isServer ? request.headers.get("Cookie") : undefined;
+
         const user = await getMe(cookie || undefined);
         return user;
     } catch (error) {

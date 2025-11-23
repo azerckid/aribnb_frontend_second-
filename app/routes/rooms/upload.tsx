@@ -28,49 +28,40 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
     // 편의시설과 카테고리 데이터를 병렬로 가져오기
     try {
-        const [amenities, categories] = await Promise.all([
-            getAmenities().catch((error) => {
-                if (import.meta.env.DEV) {
-                    console.error("Failed to fetch amenities:", error);
-                }
-                return [];
-            }),
-            getCategories().catch((error) => {
-                if (import.meta.env.DEV) {
-                    console.error("Failed to fetch categories:", error);
-                }
-                return [];
-            }),
+        const [amenitiesResult, categoriesResult] = await Promise.allSettled([
+            getAmenities(),
+            getCategories(),
         ]);
 
+        const amenities = amenitiesResult.status === "fulfilled" ? amenitiesResult.value : [];
+        const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
+
+        const amenitiesError = amenitiesResult.status === "rejected" ? amenitiesResult.reason.message : null;
+        const categoriesError = categoriesResult.status === "rejected" ? categoriesResult.reason.message : null;
+
         if (import.meta.env.DEV) {
-            const categoriesArray = Array.isArray(categories)
-                ? categories
-                : categories && typeof categories === "object" && "results" in categories
-                    ? (categories as { results: ICategory[] }).results
-                    : [];
-            console.log("Loader data:", {
-                amenitiesCount: amenities.length,
-                categoriesCount: categoriesArray.length,
-                categoriesType: Array.isArray(categories) ? "array" : typeof categories,
-                categoriesKeys: categories && typeof categories === "object" ? Object.keys(categories) : [],
-            });
+            console.log("Loader results:", { amenitiesResult, categoriesResult });
         }
 
-        return { user, amenities, categories };
+        return { user, amenities, categories, amenitiesError, categoriesError };
     } catch (error) {
-        // 에러가 발생해도 빈 배열로 처리하여 페이지는 표시
-        if (import.meta.env.DEV) {
-            console.error("Loader error:", error);
-        }
+        // ... (outer catch remains same, but we don't need it as much now)
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return { user, amenities: [], categories: [], error: errorMessage };
     }
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function clientAction({ request }: Route.ClientActionArgs) {
+    if (import.meta.env.DEV) console.log("Starting clientAction");
+
     // 호스트 권한 체크
-    const user = await requireHost(request);
+    try {
+        const user = await requireHost(request);
+        if (import.meta.env.DEV) console.log("User authenticated:", user);
+    } catch (error) {
+        if (import.meta.env.DEV) console.error("requireHost failed:", error);
+        throw error; // 리다이렉트는 여기서 던져짐
+    }
 
     const formData = await request.formData();
     const data: Record<string, FormDataEntryValue | FormDataEntryValue[]> = Object.fromEntries(formData);
@@ -98,9 +89,8 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     try {
-        // request에서 쿠키를 가져와서 API 호출에 전달
-        const cookie = request.headers.get("Cookie");
-        const room = await uploadRoom(validationResult.data, cookie || undefined);
+        // clientAction에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
+        const room = await uploadRoom(validationResult.data);
 
         // 성공 시 방 정보와 함께 성공 상태 반환 (토스트 표시 후 리다이렉트)
         return {
@@ -124,7 +114,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function UploadRoom({ loaderData }: Route.ComponentProps) {
     const { user, amenities, categories } = loaderData;
-    const actionData = useActionData<typeof action>();
+    const actionData = useActionData<typeof clientAction>();
     const navigation = useNavigation();
     const navigate = useNavigate();
     const isSubmitting = navigation.state === "submitting";
@@ -167,17 +157,7 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                     Upload Room
                 </Heading>
 
-                {/* Debug Info - Remove after fixing */}
-                <Box p={4} mb={4} bg="gray.100" borderRadius="md" fontSize="xs">
-                    <Text fontWeight="bold">Debug Info:</Text>
-                    <Text>Loader Error: {(loaderData as any).error || "None"}</Text>
-                    <Text>Amenities Type: {Array.isArray(amenities) ? "Array" : typeof amenities}</Text>
-                    <Text>Amenities Count: {amenitiesArray.length}</Text>
-                    <Text>Categories Type: {Array.isArray(categories) ? "Array" : typeof categories}</Text>
-                    <Text>Categories Count: {categoriesArray.length}</Text>
-                    <Text>Raw Amenities: {JSON.stringify(amenities).slice(0, 100)}</Text>
-                    <Text>Raw Categories: {JSON.stringify(categories).slice(0, 100)}</Text>
-                </Box>
+                {/* Debug Info Removed */}
 
                 <Form method="post">
                     <VStack gap={5} mt={5}>
@@ -366,40 +346,44 @@ export default function UploadRoom({ loaderData }: Route.ComponentProps) {
                         </Box>
                         <Box w="100%">
                             <Text mb={2} fontWeight="medium">Amenities</Text>
-                            <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
-                                {amenitiesArray.map((amenity) => (
-                                    <Box key={amenity.pk}>
-                                        <label
-                                            htmlFor={`amenity-${amenity.pk}`}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "8px",
-                                                cursor: "pointer",
-                                                userSelect: "none",
-                                            }}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                name="amenities"
-                                                value={amenity.pk}
-                                                id={`amenity-${amenity.pk}`}
+                            {amenitiesArray.length > 0 ? (
+                                <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
+                                    {amenitiesArray.map((amenity) => (
+                                        <Box key={amenity.pk}>
+                                            <label
+                                                htmlFor={`amenity-${amenity.pk}`}
                                                 style={{
-                                                    width: "18px",
-                                                    height: "18px",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "8px",
                                                     cursor: "pointer",
+                                                    userSelect: "none",
                                                 }}
-                                            />
-                                            <Text fontWeight="medium">{amenity.name}</Text>
-                                        </label>
-                                        {amenity.description && (
-                                            <Text fontSize="sm" color="gray.500" mt={1} ml={6}>
-                                                {amenity.description}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                ))}
-                            </SimpleGrid>
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    name="amenities"
+                                                    value={amenity.pk}
+                                                    id={`amenity-${amenity.pk}`}
+                                                    style={{
+                                                        width: "18px",
+                                                        height: "18px",
+                                                        cursor: "pointer",
+                                                    }}
+                                                />
+                                                <Text fontWeight="medium">{amenity.name}</Text>
+                                            </label>
+                                            {amenity.description && (
+                                                <Text fontSize="sm" color="gray.500" mt={1} ml={6}>
+                                                    {amenity.description}
+                                                </Text>
+                                            )}
+                                        </Box>
+                                    ))}
+                                </SimpleGrid>
+                            ) : (
+                                <Text color="gray.500" fontSize="sm">No amenities available.</Text>
+                            )}
                             {actionData?.fieldErrors?.amenities && (
                                 <Text fontSize="sm" color="red.500" mt={1}>{actionData.fieldErrors.amenities[0]}</Text>
                             )}
