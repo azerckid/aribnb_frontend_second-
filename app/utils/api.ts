@@ -564,14 +564,14 @@ export async function updateRoom(
 
     if (!res.ok) {
         const text = await res.text();
-        if (import.meta.env.DEV) {
-            console.error("Update room API error:", {
-                url,
-                status: res.status,
-                statusText: res.statusText,
-                response: text,
-            });
-        }
+        // Production debugging: Log error details
+        console.error("Update room API error:", {
+            url,
+            status: res.status,
+            statusText: res.statusText,
+            response: text,
+        });
+
         if (res.status === 401 || res.status === 403) {
             throw new Error(`UNAUTHORIZED: ${text}`);
         }

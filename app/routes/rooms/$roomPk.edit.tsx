@@ -101,6 +101,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs) 
     }
 
     try {
+        console.log("Submitting update for room:", roomPk, validationResult.data);
         // clientAction에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
         await updateRoom(roomPk, validationResult.data);
 
