@@ -23,9 +23,12 @@ import { uploadRoomSchema } from "~/utils/validation";
 import { requireHost } from "~/utils/auth";
 
 export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
+    if (import.meta.env.DEV) console.log("EditRoom clientLoader started");
+
     // 호스트 권한 체크 (로그인 체크 포함)
     // clientLoader에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
     const user = await requireHost(request);
+    if (import.meta.env.DEV) console.log("EditRoom clientLoader: user verified", user);
 
     const roomPk = params.roomPk;
 
@@ -35,6 +38,7 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
 
     // 방 정보, 편의시설, 카테고리 데이터를 병렬로 가져오기
     try {
+        if (import.meta.env.DEV) console.log("EditRoom clientLoader: fetching data...");
         const [room, amenities, categories] = await Promise.all([
             getRoom(roomPk),
             getAmenities().catch((error) => {
@@ -50,6 +54,7 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
                 return [];
             }),
         ]);
+        if (import.meta.env.DEV) console.log("EditRoom clientLoader: data fetched", { room, amenitiesCount: amenities.length, categoriesCount: categories.length });
 
         // 방 소유자 확인
         if (!room.is_owner) {
@@ -61,9 +66,7 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
         if (error instanceof Response) {
             throw error;
         }
-        if (import.meta.env.DEV) {
-            console.error("Loader error:", error);
-        }
+        console.error("EditRoom clientLoader error:", error);
         throw new Response("Failed to load room data", { status: 500 });
     }
 }
