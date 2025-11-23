@@ -22,11 +22,11 @@ import { parseApiError } from "~/utils/error";
 import { uploadRoomSchema } from "~/utils/validation";
 import { requireHost } from "~/utils/auth";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
     // 호스트 권한 체크 (로그인 체크 포함)
+    // clientLoader에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
     const user = await requireHost(request);
 
-    const cookie = request.headers.get("Cookie");
     const roomPk = params.roomPk;
 
     if (!roomPk) {
@@ -36,14 +36,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     // 방 정보, 편의시설, 카테고리 데이터를 병렬로 가져오기
     try {
         const [room, amenities, categories] = await Promise.all([
-            getRoom(roomPk, cookie || undefined),
-            getAmenities(cookie || undefined).catch((error) => {
+            getRoom(roomPk),
+            getAmenities().catch((error) => {
                 if (import.meta.env.DEV) {
                     console.error("Failed to fetch amenities:", error);
                 }
                 return [];
             }),
-            getCategories(cookie || undefined).catch((error) => {
+            getCategories().catch((error) => {
                 if (import.meta.env.DEV) {
                     console.error("Failed to fetch categories:", error);
                 }
@@ -68,7 +68,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     }
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function clientAction({ request, params }: Route.ClientActionArgs) {
     // 호스트 권한 체크
     const user = await requireHost(request);
 
@@ -102,8 +102,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     try {
-        const cookie = request.headers.get("Cookie");
-        await updateRoom(roomPk, validationResult.data, cookie || undefined);
+        // clientAction에서는 브라우저가 자동으로 쿠키를 처리하므로 별도 전달 불필요
+        await updateRoom(roomPk, validationResult.data);
 
         // 성공 시 토스트 표시 후 리다이렉트
         return {
@@ -126,7 +126,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function EditRoom({ loaderData }: Route.ComponentProps) {
     const { user, room, amenities, categories } = loaderData;
-    const actionData = useActionData<typeof action>();
+    const actionData = useActionData<typeof clientAction>();
     const navigation = useNavigation();
     const navigate = useNavigate();
     const isSubmitting = navigation.state === "submitting";

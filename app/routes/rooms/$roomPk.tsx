@@ -69,7 +69,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs) 
                 return { error: "Photo ID is required" };
             }
 
-            await deleteRoomPhoto(photoPk);
+            await deleteRoomPhoto(Number(roomPk), Number(photoPk));
             return { success: true, action: "delete", message: "Photo deleted successfully" };
         }
 

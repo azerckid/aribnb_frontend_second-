@@ -601,58 +601,6 @@ export async function getCategories(cookie?: string): Promise<ICategory[]> {
 }
 
 /**
- * 백엔드에서 CSRF 토큰을 직접 가져옵니다.
- * 쿠키에 토큰이 없는 경우(크로스 도메인 등)에 사용합니다.
- */
-export async function fetchCsrfToken(): Promise<string | null> {
-    try {
-        const fetchOptions: RequestInit = {
-            credentials: "include",
-            cache: "no-store",
-        };
-
-        // 시도할 URL 목록 (로그인 여부와 상관없이 폼이 있는 페이지들)
-        const urls = [
-            `${API_BASE_URL}/admin/password_reset/`, // 공개된 비밀번호 재설정 페이지
-            `${API_BASE_URL}/admin/login/`,           // 로그인 페이지
-            `${API_BASE_URL}/admin/`,                 // 대시보드 (로그인 시)
-        ];
-
-        for (const url of urls) {
-            try {
-                const res = await fetch(url, fetchOptions);
-                const text = await res.text();
-
-                // 정규식 개선: 속성 순서 상관없이 매칭 시도 (name이 먼저 나오거나 value가 먼저 나오거나)
-                // <input ... name="csrfmiddlewaretoken" ... value="..." ...>
-                const matchNameFirst = text.match(/name=["']csrfmiddlewaretoken["'][^>]*value=["']([^"']+)["']/);
-                const matchValueFirst = text.match(/value=["']([^"']+)["'][^>]*name=["']csrfmiddlewaretoken["']/);
-                const match = matchNameFirst || matchValueFirst;
-
-                if (import.meta.env.DEV) {
-                    console.log(`fetchCsrfToken attempt ${url}:`, {
-                        status: res.status,
-                        hasMatch: !!match,
-                        match: match ? match[1] : null
-                    });
-                }
-
-                if (match) return match[1];
-            } catch (e) {
-                if (import.meta.env.DEV) console.error(`Failed to fetch ${url}`, e);
-            }
-        }
-
-        return null;
-    } catch (error) {
-        if (import.meta.env.DEV) {
-            console.error("Failed to fetch CSRF token fallback:", error);
-        }
-        return null;
-    }
-}
-
-/**
  * 방에 사진을 업로드합니다.
  * @param roomPk 방 ID
  * @param file 업로드할 이미지 파일
@@ -668,23 +616,11 @@ export async function uploadRoomPhoto(
     cookie?: string
 ): Promise<IPhoto> {
     const url = `${API_BASE_URL}/rooms/${roomPk}/photos`;
-    let csrfToken = getCsrfToken(cookie);
-
-    // 토큰이 없고 브라우저 환경이면 직접 fetch 시도
-    if (!csrfToken && typeof document !== "undefined") {
-        if (import.meta.env.DEV) console.log("CSRF token missing in cookie, fetching from backend...");
-        csrfToken = await fetchCsrfToken();
-    }
-
-    // 토큰이 없어도 일단 진행 (백엔드 설정에 따라 허용될 수도 있음)
-    if (!csrfToken && import.meta.env.DEV) {
-        console.warn("Proceeding without CSRF token. Request may fail.");
-    }
+    const csrfToken = getCsrfToken(cookie);
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("description", description);
-    // FormData에 토큰 추가 제거 (헤더만 사용)
 
     // FormData를 보낼 때는 Content-Type을 설정하지 않음 (브라우저가 자동으로 boundary 포함하여 설정)
     const headers: Record<string, string> = {};
@@ -696,19 +632,6 @@ export async function uploadRoomPhoto(
         headers["Cookie"] = cookie;
     }
 
-    if (import.meta.env.DEV) {
-        console.log("Upload photo request:", {
-            url,
-            roomPk,
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            hasCsrfToken: !!csrfToken,
-            token: csrfToken ? csrfToken.substring(0, 5) + "..." : "null",
-            hasCookie: !!cookie,
-        });
-    }
-
     const res = await fetch(url, {
         method: "POST",
         credentials: "include",
@@ -717,64 +640,52 @@ export async function uploadRoomPhoto(
     });
 
     if (!res.ok) {
-        const text = await res.text();
-        if (import.meta.env.DEV) {
-            console.error("Upload photo API error:", {
-                url,
-                status: res.status,
-                statusText: res.statusText,
-                response: text,
-                headers: Object.fromEntries(res.headers.entries()),
-            });
-        }
-        if (res.status === 401 || res.status === 403) {
-            throw new Error(`UNAUTHORIZED: ${text}`);
-        }
-        if (res.status === 404) {
-            throw new Error(`API endpoint not found: ${url}. Please check if the backend endpoint is configured correctly.`);
-        }
-        throw new Error(`Photo upload failed (${res.status}): ${text}`);
+        const error = await parseApiError(res);
+        throw error;
     }
 
-    return res.json() as Promise<IPhoto>;
+    return res.json();
+}
+
+/**
+ * API 응답 에러를 파싱합니다.
+ */
+async function parseApiError(res: Response): Promise<Error> {
+    const text = await res.text();
+    if (res.status === 401 || res.status === 403) {
+        return new Error(`UNAUTHORIZED: ${text}`);
+    }
+    if (res.status === 404) {
+        return new Error(`API endpoint not found: ${res.url}`);
+    }
+    return new Error(`API Error (${res.status}): ${text}`);
 }
 
 /**
  * 방의 사진을 삭제합니다.
- * @param photoPk 삭제할 사진 ID
+ * @param roomPk 방 ID
+ * @param photoPk 사진 ID
  * @param cookie 서버 사이드 렌더링에서 사용할 쿠키 문자열 (선택)
  * @throws {Error} 사진 삭제 실패 시 에러
  */
 export async function deleteRoomPhoto(
-    photoPk: string | number,
+    roomPk: number,
+    photoPk: number,
     cookie?: string
 ): Promise<void> {
-    const url = `${API_BASE_URL}/medias/photos/${photoPk}`;
-    let csrfToken = getCsrfToken(cookie);
-
-    // 토큰이 없고 브라우저 환경이면 직접 fetch 시도
-    if (!csrfToken && typeof document !== "undefined") {
-        csrfToken = await fetchCsrfToken();
-    }
+    const url = `${API_BASE_URL}/rooms/${roomPk}/photos/${photoPk}`;
+    const csrfToken = getCsrfToken(cookie);
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
     };
+
     if (csrfToken) {
         headers["X-CSRFToken"] = csrfToken;
     }
 
     if (cookie) {
         headers["Cookie"] = cookie;
-    }
-
-    if (import.meta.env.DEV) {
-        console.log("Delete photo request:", {
-            url,
-            photoPk,
-            hasCsrfToken: !!csrfToken,
-            hasCookie: !!cookie,
-        });
     }
 
     const res = await fetch(url, {
@@ -784,22 +695,8 @@ export async function deleteRoomPhoto(
     });
 
     if (!res.ok) {
-        const text = await res.text();
-        if (import.meta.env.DEV) {
-            console.error("Delete photo API error:", {
-                url,
-                status: res.status,
-                statusText: res.statusText,
-                response: text,
-            });
-        }
-        if (res.status === 401 || res.status === 403) {
-            throw new Error(`UNAUTHORIZED: ${text}`);
-        }
-        if (res.status === 404) {
-            throw new Error(`Photo not found: ${url}`);
-        }
-        throw new Error(`Photo deletion failed (${res.status}): ${text}`);
+        const error = await parseApiError(res);
+        throw error;
     }
 }
 
