@@ -612,8 +612,23 @@ export async function fetchCsrfToken(): Promise<string | null> {
             credentials: "include",
         });
         const text = await res.text();
+
+        if (import.meta.env.DEV) {
+            console.log("fetchCsrfToken response:", {
+                status: res.status,
+                url: res.url,
+                textLength: text.length,
+                preview: text.substring(0, 500) // Log beginning to see if it's login page or dashboard
+            });
+        }
+
         // <input type="hidden" name="csrfmiddlewaretoken" value="..."> 패턴 찾기
         const match = text.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+
+        if (import.meta.env.DEV) {
+            console.log("fetchCsrfToken match:", match ? match[1] : "null");
+        }
+
         return match ? match[1] : null;
     } catch (error) {
         if (import.meta.env.DEV) {
