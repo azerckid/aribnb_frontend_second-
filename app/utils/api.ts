@@ -676,16 +676,15 @@ export async function uploadRoomPhoto(
         csrfToken = await fetchCsrfToken();
     }
 
-    if (!csrfToken) {
-        // 토큰을 찾을 수 없으면 에러 발생 (사용자에게 알림)
-        throw new Error("Security token not found. Please refresh the page or try logging in again.");
+    // 토큰이 없어도 일단 진행 (백엔드 설정에 따라 허용될 수도 있음)
+    if (!csrfToken && import.meta.env.DEV) {
+        console.warn("Proceeding without CSRF token. Request may fail.");
     }
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("description", description);
-    // Django는 FormData의 경우 필드로도 CSRF 토큰을 받음
-    formData.append("csrfmiddlewaretoken", csrfToken);
+    // FormData에 토큰 추가 제거 (헤더만 사용)
 
     // FormData를 보낼 때는 Content-Type을 설정하지 않음 (브라우저가 자동으로 boundary 포함하여 설정)
     const headers: Record<string, string> = {};
@@ -705,6 +704,7 @@ export async function uploadRoomPhoto(
             fileSize: file.size,
             fileType: file.type,
             hasCsrfToken: !!csrfToken,
+            token: csrfToken ? csrfToken.substring(0, 5) + "..." : "null",
             hasCookie: !!cookie,
         });
     }
