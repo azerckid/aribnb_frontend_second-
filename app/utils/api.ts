@@ -544,7 +544,7 @@ export async function updateRoom(
     },
     cookie?: string
 ): Promise<IRoom> {
-    const url = `${API_BASE_URL}/rooms/${roomPk}/`;
+    const url = `${API_BASE_URL}/rooms/${roomPk}`;
     const csrfToken = getCsrfToken(cookie);
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (csrfToken) {
